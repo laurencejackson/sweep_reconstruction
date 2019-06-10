@@ -8,7 +8,7 @@ Reconstruction code for respiration resolved SWEEP acquisitions. The code presen
 
 An outline of the reconstruction pipeline is given in the figure below. For more details please refer to the paper given above.
 
-<div style="text-align:center"><img src="./data/figures/Figure_1_pipeline.png" width="600"/></div>
+<p align="center"><img width="600" src="./data/figures/Figure_1_pipeline.png"></p>
 
 ## Example
 ```
