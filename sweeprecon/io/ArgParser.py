@@ -1,7 +1,10 @@
 """
 Input parser for command line operation
+Laurence Jackson, BME, KCL 2019
+
 """
 
+import sys
 import argparse
 
 
@@ -18,12 +21,21 @@ class ArgParser(object):
         self._parser = argparse.ArgumentParser(**kwargs)
 
         # Create group for named required arguments so these are listed separately
-        self._parser_req = self._parser.add_argument_group('Required arguments')
+        self._parser_req = self._parser.add_argument_group('required arguments')
 
-    def get_parser(self):
-        return self._parser
+    @staticmethod
+    def print_args(args):
+        for arg in sorted(vars(args)):
+            print('%s:   %s' % (arg, getattr(args, arg)))
 
     def parse_args(self):
+        try:
+            self._parser.parse_args()
+        except SystemExit:
+            raise Exception('Input argument error: refer to usage info')
+            self._parser.print_help()
+            sys.exit(1)
+
         return self._parser.parse_args()
 
     def _add_argument(self, allvars):
@@ -53,6 +65,7 @@ class ArgParser(object):
 
     def add_input_file(self,
                        option_string=("-i", "--input"),
+                       metavar='',
                        help="path to input file",
                        required=True
                        ):
@@ -60,6 +73,7 @@ class ArgParser(object):
 
     def add_slice_thickness(self,
                             option_string=("-t", "--thickness"),
+                            metavar='',
                             help="thickness of acquired slice [mm]",
                             required=False,
                             default=3
@@ -67,15 +81,17 @@ class ArgParser(object):
         self._add_argument(dict(locals()))
 
     def add_n_resp_states(self,
-                         option_string=("-n", "--nstates"),
-                         help="number of respiration states",
-                         required=False,
-                         default=4
-                         ):
+                          option_string=("-n", "--nstates"),
+                          metavar='',
+                          help="number of respiration states",
+                          required=False,
+                          default=4
+                          ):
         self._add_argument(dict(locals()))
 
     def add_redo_flag(self,
                       option_string=("-r", "--redo"),
+                      action='store_true',
                       help="redo all steps with given arguments",
                       required=False,
                       default=False
