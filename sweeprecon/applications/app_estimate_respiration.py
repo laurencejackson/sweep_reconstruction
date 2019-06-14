@@ -7,6 +7,8 @@ Laurence Jackson, BME, KCL, 2019
 
 
 from sweeprecon.io.ArgParser import ArgParser
+from sweeprecon.EstimateRespiration import EstimateRespiration
+from sweeprecon.io.ImageData import ImageData
 
 
 def app_estimate_respiration(args=None):
@@ -28,11 +30,25 @@ def app_estimate_respiration(args=None):
 
         # optional
         input_vars.add_redo_flag(required=False)
+        input_vars.add_resp_crop(required=False)
 
         # parse
         args = input_vars.parse_args()
 
+    else:
+
+        args.input = 'IMG_3D_'  # Check input file is 3D
+
+
     # Estimate respiration
+    image = ImageData(args.input)
+
+    resp = EstimateRespiration(img=image,
+                               method='body_area',  # currently only body_area but space for other methods
+                               crop_data=args.crop_resp)
+    resp.run()
+
+    # Plot and save summary of respiration
 
     # Done
     print('Estimating respiration complete')

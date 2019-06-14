@@ -1,12 +1,12 @@
 """
 Input parser for command line operation
-Laurence Jackson, BME, KCL 2019
 
+Laurence Jackson, BME, KCL 2019
 """
 
+import os
 import nibabel as nib
 import numpy as np
-import os
 
 
 class ImageData(object):
@@ -81,3 +81,7 @@ class ImageData(object):
         print('Saving ' + prefix + filename)
         nii = nib.Nifti1Image(self._img, self._nii.affine, self._nii.header)
         nib.save(nii, save_name)
+
+    def square_crop(self):
+        """Crops image in xyz with preserved geometry"""
+        pass

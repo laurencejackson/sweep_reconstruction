@@ -1,7 +1,7 @@
 """
 Input parser for command line operation
-Laurence Jackson, BME, KCL 2019
 
+Laurence Jackson, BME, KCL 2019
 """
 
 import argparse
@@ -28,12 +28,7 @@ class ArgParser(object):
             print('%s:   %s' % (arg, getattr(args, arg)))
 
     def parse_args(self):
-        try:
-            self._parser.parse_args()
-        except SystemExit:
-            self._parser.print_help()
-            raise IOError('Input argument error: refer to usage info')
-
+        """Parse input arguments"""
         return self._parser.parse_args()
 
     def _add_argument(self, allvars):
@@ -91,6 +86,15 @@ class ArgParser(object):
                       option_string=("-r", "--redo"),
                       action='store_true',
                       help="redo all steps with given arguments",
+                      required=False,
+                      default=False
+                      ):
+        self._add_argument(dict(locals()))
+
+    def add_resp_crop(self,
+                      option_string=("-c", "--crop_resp"),
+                      action='store_true',
+                      help="automatically crop data to respiration regions, can improve respiration estimates",
                       required=False,
                       default=False
                       ):
