@@ -4,7 +4,6 @@ Laurence Jackson, BME, KCL 2019
 
 """
 
-import sys
 import argparse
 
 
@@ -32,9 +31,8 @@ class ArgParser(object):
         try:
             self._parser.parse_args()
         except SystemExit:
-            raise Exception('Input argument error: refer to usage info')
             self._parser.print_help()
-            sys.exit(1)
+            raise IOError('Input argument error: refer to usage info')
 
         return self._parser.parse_args()
 

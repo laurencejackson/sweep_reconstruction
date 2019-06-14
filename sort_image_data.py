@@ -9,6 +9,5 @@ import sys
 from sweeprecon.applications.app_sort_image_data import app_sort_image_data
 
 if __name__ == "__main__":
-    print('\n________________________ Sorting image data ________________________\n')
     app_sort_image_data()
     sys.exit()
