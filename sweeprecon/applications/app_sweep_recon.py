@@ -42,7 +42,7 @@ def main():
     # _______________________ Estimating respiration _____________________
     app_estimate_respiration(args)
 
-    print('\n___________________ Classify respiration states ____________________\n')
+    # ___________________ Classify respiration states ____________________
     print('\n______________________ Re-sampling image data ______________________\n')
     print('\n________________________ Splitting patches _________________________\n')
     print('\n___________________ Performing DSVR registration ___________________\n')
