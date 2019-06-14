@@ -36,7 +36,6 @@ def main():
 
     # ________________________ Sorting image data ________________________
     app_sort_image_data(args)
-    print('got to here')
 
     print('\n________________________ Pre-processing data _______________________\n')
     print('\n_______________________ Estimating respiration _____________________\n')

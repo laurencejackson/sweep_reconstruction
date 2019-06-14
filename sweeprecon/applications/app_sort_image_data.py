@@ -16,6 +16,7 @@ def app_sort_image_data(args=None):
     Sort image data
     :return:
     """
+    print('\n________________________ Sorting image data ________________________\n')
 
     # Check if function if being run as part of pipeline or by itself
     if not args:
@@ -28,17 +29,21 @@ def app_sort_image_data(args=None):
         input_vars.add_input_file(required=True)
 
         # optional
-        input_vars.add_redo_flag()
+        input_vars.add_redo_flag(required=False)
 
         # parse
         args = input_vars.parse_args()
 
     # read image data if not already done and redo not flagged
     image = ImageData(args.input)
-    img = image.get_data()
+
+    # sort image
+    image.sort_4d_to_3d()
 
     # save output
+    basename = os.path.basename(args.input)
+    image.write_nii(basename, prefix='IMG_3D_')
 
-    # create rescat object
+    print('  Sorting data complete')
 
     return
