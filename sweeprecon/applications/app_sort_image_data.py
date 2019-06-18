@@ -31,20 +31,28 @@ def app_sort_image_data(args=None):
         input_vars.add_input_file(required=True)
 
         # optional
-        input_vars.add_redo_flag(required=False)
+        input_vars.add_flag_redo(required=False)
 
         # parse
         args = input_vars.parse_args()
 
+    # local file output vars
+    basename = os.path.basename(args.input)
+    prefix = 'IMG_3D_'
+    dirpath = os.getcwd()
+
     # read image data if not already done and redo not flagged
+    if os.path.isfile(os.path.join(dirpath, prefix + basename)) and not args.redo:
+        print('Data already sorted.')
+        return
+
     image = ImageData(args.input)
 
     # sort image
     image.sort_4d_to_3d()
 
     # save output
-    basename = os.path.basename(args.input)
-    image.write_nii(basename, prefix='IMG_3D_', dirpath='./test_dump')
+    image.write_nii(basename, prefix=prefix)
 
     # Done
     print('Sorting data complete')

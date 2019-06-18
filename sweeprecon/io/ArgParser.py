@@ -82,7 +82,7 @@ class ArgParser(object):
                           ):
         self._add_argument(dict(locals()))
 
-    def add_redo_flag(self,
+    def add_flag_redo(self,
                       option_string=("-r", "--redo"),
                       action='store_true',
                       help="redo all steps with given arguments",
@@ -91,10 +91,10 @@ class ArgParser(object):
                       ):
         self._add_argument(dict(locals()))
 
-    def add_resp_crop(self,
-                      option_string=("-c", "--crop_resp"),
-                      action='store_true',
-                      help="automatically crop data to respiration regions, can improve respiration estimates",
+    def add_flag_disable_resp_crop(self,
+                      option_string=("-c", "--disable_crop"),
+                      action='store_false',
+                      help="disable automatic cropping of data to respiration regions",
                       required=False,
                       default=False
                       ):

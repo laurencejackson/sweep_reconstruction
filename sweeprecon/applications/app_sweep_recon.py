@@ -27,7 +27,8 @@ def main():
     # optional
     input_vars.add_slice_thickness(required=False)
     input_vars.add_n_resp_states(required=False)
-    input_vars.add_redo_flag(required=False)
+    input_vars.add_flag_redo(required=False)
+    input_vars.add_flag_disable_resp_crop(required=False)
 
     # parse
     args = input_vars.parse_args()

@@ -29,23 +29,27 @@ def app_estimate_respiration(args=None):
         input_vars.add_input_file(required=True)
 
         # optional
-        input_vars.add_redo_flag(required=False)
-        input_vars.add_resp_crop(required=False)
+        input_vars.add_flag_redo(required=False)
+        input_vars.add_flag_disable_resp_crop(required=False)
 
         # parse
         args = input_vars.parse_args()
 
+        # load image
+        image = ImageData(args.input)
+
     else:
+        # if running through pipeline, make sure input argument is 3D
+        image = ImageData(args.input)
+        # args.input = 'IMG_3D_'  # Check input file is 3D
 
-        args.input = 'IMG_3D_'  # Check input file is 3D
-
+    # check if already done or redo flagged
+    # TODO
 
     # Estimate respiration
-    image = ImageData(args.input)
-
-    resp = EstimateRespiration(img=image,
+    resp = EstimateRespiration(image,
                                method='body_area',  # currently only body_area but space for other methods
-                               crop_data=args.crop_resp)
+                               disable_crop_data=args.disable_crop)
     resp.run()
 
     # Plot and save summary of respiration
