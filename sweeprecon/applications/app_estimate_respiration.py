@@ -10,6 +10,9 @@ from sweeprecon.io.ArgParser import ArgParser
 from sweeprecon.EstimateRespiration import EstimateRespiration
 from sweeprecon.io.ImageData import ImageData
 
+from sweeprecon.utilities.LogData import LogData
+from sweeprecon.utilities.PlotFigures import plot_respiration_summary
+
 
 def app_estimate_respiration(args=None):
     """
@@ -21,6 +24,8 @@ def app_estimate_respiration(args=None):
     print("\n_______________________ Estimating respiration _____________________\n")
 
     # Check if function if being run as part of pipeline or by itself
+    logger = LogData()
+
     if args is None:
         # parse arguments
         input_vars = ArgParser(description="Estimates a respiration signal from a sequence of dynamic 2D images")
@@ -53,6 +58,13 @@ def app_estimate_respiration(args=None):
     resp.run()
 
     # Plot and save summary of respiration
+    plot_respiration_summary(resp.resp_raw, resp.resp_trend, resp.resp_trace, sts)
+
+    # record output
+    logger.set_key('resp_raw', resp.resp_raw)
+    logger.set_key('resp_trend', resp.resp_trend)
+    logger.set_key('resp_trace', resp.resp_trace)
+    logger.save_log_file()
 
     # Done
     print('Estimating respiration complete')

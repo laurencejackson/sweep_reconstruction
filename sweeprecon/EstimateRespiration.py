@@ -31,7 +31,13 @@ class EstimateRespiration(object):
         self._plot_figures = plot_figures
         self._disable_crop_data = disable_crop_data
 
+        # variables
+        self.resp_raw = None
+        self.resp_trend = None
+        self.resp_trace = None
+
     def run(self):
+        """Runs chosen respiration estimating method"""
 
         if self._resp_method == 'body_area':
             self._method_body_area()
@@ -92,4 +98,10 @@ class EstimateRespiration(object):
         pass
 
     def _refine_boundaries(self):
+        pass
+
+    def _sum_mask_data(self):
+        pass
+
+    def _gpr_filter(self):
         pass

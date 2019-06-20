@@ -10,6 +10,8 @@ import os
 from sweeprecon.io.ArgParser import ArgParser
 from sweeprecon.io.ImageData import ImageData
 
+from sweeprecon.utilities.LogData import LogData
+
 
 def app_sort_image_data(args=None):
     """
@@ -41,6 +43,10 @@ def app_sort_image_data(args=None):
     prefix = 'IMG_3D_'
     dirpath = os.getcwd()
 
+    # Create logging object
+    logger = LogData()
+    logger.set_key('input_data_raw', args.input)
+
     # read image data if not already done and redo not flagged
     if os.path.isfile(os.path.join(dirpath, prefix + basename)) and not args.redo:
         print('Data already sorted.')
@@ -53,6 +59,10 @@ def app_sort_image_data(args=None):
 
     # save output
     image.write_nii(basename, prefix=prefix)
+
+    # record output
+    logger.set_key('input_data_sorted', os.path.join(os.getcwd(), prefix, basename))
+    logger.save_log_file()
 
     # Done
     print('Sorting data complete')
