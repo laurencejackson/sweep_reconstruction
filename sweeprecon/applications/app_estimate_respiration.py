@@ -58,6 +58,7 @@ def app_estimate_respiration(args=None):
     resp.run()
 
     # Plot and save summary of respiration
+    sts = None
     plot_respiration_summary(resp.resp_raw, resp.resp_trend, resp.resp_trace, sts)
 
     # record output

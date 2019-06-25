@@ -4,11 +4,18 @@ Class containing data and functions for estimating respiration siganl from 3D da
 Laurence Jackson, BME, KCL 2019
 """
 
+import time
 import numpy as np
 
 import sweeprecon.utilities.PlotFigures as PlotFigures
+from joblib import delayed, Parallel
 
 from scipy.ndimage import gaussian_filter
+from scipy.signal import medfilt2d
+from skimage.restoration import denoise_tv_bregman
+
+# debug import
+import matplotlib.pyplot as plt
 
 
 class EstimateRespiration(object):
@@ -95,9 +102,26 @@ class EstimateRespiration(object):
         self._image.write_nii('resp_cropped', prefix='IMG_3D_')
 
     def _initialise_boundaries(self):
-        pass
+        """Initialises body area boundaries"""
+
+        # Filter image data to reduce errors in first contour estimate
+        filtered_image = self._process_slices_parallel(self._filter_median, self._image.img, cores=4)
+
+        # determine threshold of background data
+        thresh = np.max(filtered_image[[0, filtered_image.shape[0] - 1], :, :]) - (2 * np.std(filtered_image[[0, filtered_image.shape[0] - 1], :, :]))
+
+        # apply threshold - and always include top and bottom two rows in mask
+        img_thresh = filtered_image <= thresh
+        img_thresh[[0, filtered_image.shape[0] - 1], :, :] = 1  # always include top and bottom two rows in mask
+
+
+
+        # write filtered data to image
+        self._image.set_data(initialized_image)
+        self._image.write_nii('initialised_', prefix='IMG_3D_')
 
     def _refine_boundaries(self):
+
         pass
 
     def _sum_mask_data(self):
@@ -105,3 +129,37 @@ class EstimateRespiration(object):
 
     def _gpr_filter(self):
         pass
+
+    # ___________________________________________________________________
+    # __________________________ Static Methods__________________________
+
+    @ staticmethod
+    def _filter_median(img, kernel_size=5):
+        return medfilt2d(img, [kernel_size, kernel_size])  # median filter more robust to bands in balanced images
+
+    @staticmethod
+    def _filter_denoise(image, weight=0.001):
+        return denoise_tv_bregman(image, weight=weight)
+
+    @staticmethod
+    def _process_slices_parallel(function_name, img, cores=4):
+        """
+        Runs a defined function over the slice direction on parallel threads
+        :param function_name: function to be performed (must operate on a 2D image)
+        :param img: image volume (3D)
+        :param cores: number of cores to run on [default: 4]
+        :return:
+        """
+        # start timer
+        t1 = time.time()
+
+        # run parallel function
+        sub_arrays = Parallel(n_jobs=cores)(  # Use n cores
+            delayed(function_name)(img[:, :, zz])  # Apply function_name
+            for zz in range(0, img.shape[2]))  # For each 3rd dimension
+
+        # print function duration info
+        print('%s took: %.1fs' % (function_name.__name__, (time.time() - t1)))
+
+        # return recombined array
+        return np.stack(sub_arrays, axis=2)
