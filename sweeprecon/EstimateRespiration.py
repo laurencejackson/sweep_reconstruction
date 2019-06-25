@@ -6,6 +6,7 @@ Laurence Jackson, BME, KCL 2019
 
 import time
 import numpy as np
+import copy
 
 import sweeprecon.utilities.PlotFigures as PlotFigures
 
@@ -15,10 +16,6 @@ from scipy.signal import medfilt2d
 from skimage import restoration, measure, segmentation
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
-
-
-# debug import
-import matplotlib.pyplot as plt
 
 
 class EstimateRespiration(object):
@@ -37,12 +34,13 @@ class EstimateRespiration(object):
         """
 
         self._image = img
-        self._image_initialised = img
-        self._image_refined = img
+        self._image_initialised = copy.deepcopy(img)
+        self._image_refined = copy.deepcopy(img)
 
         self._resp_method = method
         self._plot_figures = plot_figures
         self._disable_crop_data = disable_crop_data
+        self._crop_fraction = 0.12
 
         # variables to write to log
         self.resp_raw = None
@@ -122,27 +120,32 @@ class EstimateRespiration(object):
 
         # apply threshold - and always include top and bottom two rows in mask
         img_thresh = filtered_image <= thresh
-        img_thresh[[0, filtered_image.shape[0] - 1], :, :] = 1  # always include top and bottom two rows in mask
+        img_thresh[[0, filtered_image.shape[0] - 1], :, :] = 1  # always include most anterior/posterior rows in mask
 
         # take components connected to anterior/posterior sides
         labels = measure.label(img_thresh, background=0, connectivity=1)
         ac_mask = np.zeros(labels.shape)
         ac_mask[(labels == labels[0, 0, 0]) | (labels == labels[filtered_image.shape[0] - 1, 0, 0])] = 1
 
-        # write initalised contour data to new image
+        # write initialised contour data to new image
         self._image_initialised.set_data(ac_mask)
         self._image_initialised.write_nii('initialised', prefix='IMG_3D_')
 
     def _refine_boundaries(self):
         """Refines body area estimates using Chan-Vese active contour model"""
-        denoised_image = self._process_slices_parallel(self._filter_denoise, self._image.img)
-        refined_contours = self._process_slices_parallel(self._segment_cv, denoised_image, self._image_initialised.img)
+        filtered_image = self._process_slices_parallel(self._filter_denoise, self._image.img)
+        refined_contours = self._process_slices_parallel(self._segment_cv, filtered_image, self._image_initialised.img)
 
         # invert mask
         refined_contours = (refined_contours == 0) * 1
 
-        # write refined contour data to file
+        # crop refined boundaries to avoid edge effects
         self._image_refined.set_data(refined_contours)
+        cropval = int(self._crop_fraction * refined_contours.shape[1])
+        rect = np.array([[0 + cropval, 0], [refined_contours.shape[1]-1-cropval, refined_contours.shape[0]]], dtype=int)
+        self._image_refined.square_crop(rect=rect)
+
+        # write contour data to file
         self._image_refined.write_nii('refined_segmentation', prefix='IMG_3D_')
 
     def _sum_mask_data(self):
@@ -159,11 +162,11 @@ class EstimateRespiration(object):
         # fit GPR model
         X = np.arange(self.resp_raw.shape[0]).reshape(-1, 1)
         gp = GaussianProcessRegressor(kernel=kernel,
-                                      alpha=0.0).fit(X, self.resp_raw.shape)
+                                      alpha=0.0).fit(X, self.resp_raw)
 
         # filter signal to extract respiration
         self.resp_trend, y_cov = gp.predict(X, return_cov=True)
-        self.resp_trace = self.resp_raw.shape - self.resp_trend
+        self.resp_trace = self.resp_raw - self.resp_trend
 
     # ___________________________________________________________________
     # __________________________ Static Methods__________________________
@@ -179,7 +182,7 @@ class EstimateRespiration(object):
         return medfilt2d(imgs[0], [kernel_size, kernel_size])  # median filter more robust to bands in balanced images
 
     @staticmethod
-    def _filter_denoise(imgs, weight=0.001):
+    def _filter_denoise(imgs, weight=0.003):
         """
         TV denoising
         :param imgs: slice to denoise [2D]
@@ -189,9 +192,9 @@ class EstimateRespiration(object):
         return restoration.denoise_tv_bregman(imgs[0], weight=weight)
 
     @staticmethod
-    def _segment_cv(imgs, iterations=100):
+    def _segment_cv(imgs, iterations=150):
         """
-        refines initial segmentation contours
+        refines initial segmentation contours using chan vese segmentation model
         :param imgs: list of 2 images [2D] imgs[0] = slice to segment: imgs[1] = initial level set
         :param iterations: number of refinement iterations
         :return:
@@ -199,9 +202,9 @@ class EstimateRespiration(object):
         return segmentation.morphological_chan_vese(imgs[0],
                                                     iterations,
                                                     init_level_set=imgs[1],
-                                                    smoothing=5,
-                                                    lambda1=2.5,
-                                                    lambda2=0.5
+                                                    smoothing=6,
+                                                    lambda1=3.0,
+                                                    lambda2=1.5
                                                     )
 
     @staticmethod
@@ -230,7 +233,7 @@ class EstimateRespiration(object):
             for zz in range(0, vols[0].shape[2]))  # For each 3rd dimension
 
         # print function duration info
-        print('%s duration: %.1fs on %d cores' % (function_name.__name__, (time.time() - t1), cores))
+        print('%s duration: %.1fs [%d threads]' % (function_name.__name__, (time.time() - t1), cores))
 
         # return recombined array
         return np.stack(sub_arrays, axis=2)
