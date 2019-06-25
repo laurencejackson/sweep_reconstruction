@@ -17,11 +17,14 @@ from skimage import restoration, measure, segmentation
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 
+#TMEP
+import matplotlib.pyplot as plt
 
 class EstimateRespiration(object):
 
     def __init__(self,
                  img,
+                 write_paths,
                  method='body_area',
                  disable_crop_data=False,
                  plot_figures=True
@@ -42,10 +45,11 @@ class EstimateRespiration(object):
         self._disable_crop_data = disable_crop_data
         self._crop_fraction = 0.12
 
-        # variables to write to log
         self.resp_raw = None
         self.resp_trend = None
         self.resp_trace = None
+
+        self._write_paths = write_paths
 
     def run(self):
         """Runs chosen respiration estimating method"""
@@ -107,7 +111,7 @@ class EstimateRespiration(object):
         self._image.square_crop(rect=rect)
 
         # write output
-        self._image.write_nii('resp_cropped', prefix='IMG_3D_')
+        self._image.write_nii(self._write_paths.path_cropped)
 
     def _initialise_boundaries(self):
         """Initialises body area boundaries"""
@@ -116,7 +120,7 @@ class EstimateRespiration(object):
         filtered_image = self._process_slices_parallel(self._filter_median, self._image.img)
 
         # determine threshold of background data
-        thresh = np.max(filtered_image[[0, filtered_image.shape[0] - 1], :, :]) - (1.2 * np.std(filtered_image[[0, filtered_image.shape[0] - 1], :, :]))
+        thresh = np.max(filtered_image[[0, filtered_image.shape[0] - 1], :, :]) - (0.5 * np.std(filtered_image[[0, filtered_image.shape[0] - 1], :, :]))
 
         # apply threshold - and always include top and bottom two rows in mask
         img_thresh = filtered_image <= thresh
@@ -129,24 +133,26 @@ class EstimateRespiration(object):
 
         # write initialised contour data to new image
         self._image_initialised.set_data(ac_mask)
-        self._image_initialised.write_nii('initialised', prefix='IMG_3D_')
+        self._image_initialised.write_nii(self._write_paths.path_initialised_contours)
 
     def _refine_boundaries(self):
         """Refines body area estimates using Chan-Vese active contour model"""
-        filtered_image = self._process_slices_parallel(self._filter_denoise, self._image.img)
-        refined_contours = self._process_slices_parallel(self._segment_cv, filtered_image, self._image_initialised.img)
+        filtered_image = self._process_slices_parallel(self._filter_median, self._image.img)
+        filtered_image = self._process_slices_parallel(self._filter_inv_gauss, filtered_image)
+        refined_contours = self._process_slices_parallel(self._segment_gac, filtered_image, self._image_initialised.img)
 
         # invert mask
         refined_contours = (refined_contours == 0) * 1
 
         # crop refined boundaries to avoid edge effects
         self._image_refined.set_data(refined_contours)
+
         cropval = int(self._crop_fraction * refined_contours.shape[1])
         rect = np.array([[0 + cropval, 0], [refined_contours.shape[1]-1-cropval, refined_contours.shape[0]]], dtype=int)
         self._image_refined.square_crop(rect=rect)
 
         # write contour data to file
-        self._image_refined.write_nii('refined_segmentation', prefix='IMG_3D_')
+        self._image_refined.write_nii(self._write_paths.path_refined_contours)
 
     def _sum_mask_data(self):
         """Sums pixels in refined mask"""
@@ -192,7 +198,17 @@ class EstimateRespiration(object):
         return restoration.denoise_tv_bregman(imgs[0], weight=weight)
 
     @staticmethod
-    def _segment_cv(imgs, iterations=150):
+    def _filter_inv_gauss(imgs, alpha=10, sigma=1.5):
+        """
+        TV denoising
+        :param imgs: slice to denoise [2D]
+        :param weight: TV weight
+        :return:
+        """
+        return segmentation.inverse_gaussian_gradient(imgs[0], alpha=alpha, sigma=sigma)
+
+    @staticmethod
+    def _segment_cv(imgs, iterations=200):
         """
         refines initial segmentation contours using chan vese segmentation model
         :param imgs: list of 2 images [2D] imgs[0] = slice to segment: imgs[1] = initial level set
@@ -202,10 +218,25 @@ class EstimateRespiration(object):
         return segmentation.morphological_chan_vese(imgs[0],
                                                     iterations,
                                                     init_level_set=imgs[1],
-                                                    smoothing=6,
-                                                    lambda1=3.0,
-                                                    lambda2=1.5
+                                                    smoothing=2,
+                                                    lambda1=1.5,
+                                                    lambda2=0.5
                                                     )
+
+    @staticmethod
+    def _segment_gac(imgs, iterations=20):
+        """
+        refines initial segmentation contours using geodesic active contours
+        :param imgs: list of 2 images [2D] imgs[0] = slice to segment: imgs[1] = initial level set
+        :param iterations: number of refinement iterations
+        :return:
+        """
+        return segmentation.morphological_geodesic_active_contour(imgs[0],
+                                                                  iterations,
+                                                                  init_level_set=imgs[1],
+                                                                  smoothing=2,
+                                                                  balloon=1.2
+                                                                  )
 
     @staticmethod
     def _process_slices_parallel(function_name, *vols, cores=None):

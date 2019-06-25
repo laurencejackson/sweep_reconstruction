@@ -68,26 +68,16 @@ class ImageData(object):
         # set reshaped data
         self.set_data(img_reshape)
 
-    def write_nii(self, filename, dirpath=None, prefix=None):
+    def write_nii(self, path):
         """
         Saves NIfTI image in working directory
-        :param dirpath: directory to save NIfTI file to
-        :param filename: basename for file path
-        :param prefix: prefix to add to file path
+        :param path: path to save NIfTI file to
         :return:
         """
 
-        if dirpath is None:
-            dirpath = os.getcwd()
-
-        if filename.startswith(prefix):
-            prefix = ''
-
-        save_name = os.path.join(dirpath, prefix + filename)
-
-        print('Saving ' + prefix + filename)
+        print('Saving ' + path)
         nii = nib.Nifti1Image(self.img, self._nii.affine, self._nii.header)
-        nib.save(nii, save_name)
+        nib.save(nii, path)
 
     def get_fs(self):
         """Estimates the sampling frequency in Hz from the NIfTI header"""

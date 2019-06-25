@@ -30,7 +30,6 @@ class ClassifyRespiration(object):
         bounds[:, 0] = max_negative
         bounds[:, nstates] = max_positive
 
-        print('Assigning states ... ')
         for ww in range(0, nstates):
             rowidx = np.where(np.logical_and(self._resp_trace >= bounds[:, ww], self._resp_trace <= bounds[:, ww + 1]))
             self.index[rowidx] = ww + 1

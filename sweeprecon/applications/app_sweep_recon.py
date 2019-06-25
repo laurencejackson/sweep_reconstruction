@@ -10,6 +10,7 @@ from sweeprecon.io.ArgParser import ArgParser
 from sweeprecon.applications.app_sort_image_data import app_sort_image_data
 from sweeprecon.applications.app_estimate_respiration import app_estimate_respiration
 
+from sweeprecon.utilities.LogData import LogData
 
 def main():
     """
@@ -34,14 +35,19 @@ def main():
     args = input_vars.parse_args()
     input_vars.print_args(args)
 
+    # store args in logger
+    logger = LogData()
+    logger.args = args
+    logger.save_log_file()
+
     # ________________________ Sorting image data ________________________
-    app_sort_image_data(args)
+    app_sort_image_data(pipeline=True)
 
     # ________________________ Pre-processing data _______________________
     # TODO outlier exclusion
 
     # _______________________ Estimating respiration _____________________
-    app_estimate_respiration(args)
+    app_estimate_respiration(pipeline=True)
 
     # ___________________ Classify respiration states ____________________
 
