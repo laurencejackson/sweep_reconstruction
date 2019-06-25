@@ -28,6 +28,9 @@ class ImageData(object):
         """Returns image data as numpy array"""
         return self.img
 
+    def reset_data(self):
+        self.img = self._nii.get_fdata()
+
     def get_hdr(self):
         """Returns header information"""
         return self._nii.header

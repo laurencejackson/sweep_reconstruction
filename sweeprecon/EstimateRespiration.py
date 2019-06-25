@@ -8,11 +8,14 @@ import time
 import numpy as np
 
 import sweeprecon.utilities.PlotFigures as PlotFigures
-from joblib import delayed, Parallel
 
+from joblib import delayed, Parallel, cpu_count
 from scipy.ndimage import gaussian_filter
 from scipy.signal import medfilt2d
-from skimage.restoration import denoise_tv_bregman
+from skimage import restoration, measure, segmentation
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, WhiteKernel
+
 
 # debug import
 import matplotlib.pyplot as plt
@@ -34,11 +37,14 @@ class EstimateRespiration(object):
         """
 
         self._image = img
+        self._image_initialised = img
+        self._image_refined = img
+
         self._resp_method = method
         self._plot_figures = plot_figures
         self._disable_crop_data = disable_crop_data
 
-        # variables
+        # variables to write to log
         self.resp_raw = None
         self.resp_trend = None
         self.resp_trace = None
@@ -62,6 +68,10 @@ class EstimateRespiration(object):
 
         print('Refining boundaries...')
         self._refine_boundaries()
+
+        print('Extracting respiration...')
+        self._sum_mask_data()
+        self._gpr_filter()
 
     def _auto_crop(self, resp_min=0.2, resp_max=0.4, crop_fraction=0.4):
         """
@@ -105,61 +115,122 @@ class EstimateRespiration(object):
         """Initialises body area boundaries"""
 
         # Filter image data to reduce errors in first contour estimate
-        filtered_image = self._process_slices_parallel(self._filter_median, self._image.img, cores=4)
+        filtered_image = self._process_slices_parallel(self._filter_median, self._image.img)
 
         # determine threshold of background data
-        thresh = np.max(filtered_image[[0, filtered_image.shape[0] - 1], :, :]) - (2 * np.std(filtered_image[[0, filtered_image.shape[0] - 1], :, :]))
+        thresh = np.max(filtered_image[[0, filtered_image.shape[0] - 1], :, :]) - (1.2 * np.std(filtered_image[[0, filtered_image.shape[0] - 1], :, :]))
 
         # apply threshold - and always include top and bottom two rows in mask
         img_thresh = filtered_image <= thresh
         img_thresh[[0, filtered_image.shape[0] - 1], :, :] = 1  # always include top and bottom two rows in mask
 
+        # take components connected to anterior/posterior sides
+        labels = measure.label(img_thresh, background=0, connectivity=1)
+        ac_mask = np.zeros(labels.shape)
+        ac_mask[(labels == labels[0, 0, 0]) | (labels == labels[filtered_image.shape[0] - 1, 0, 0])] = 1
 
-
-        # write filtered data to image
-        self._image.set_data(initialized_image)
-        self._image.write_nii('initialised_', prefix='IMG_3D_')
+        # write initalised contour data to new image
+        self._image_initialised.set_data(ac_mask)
+        self._image_initialised.write_nii('initialised', prefix='IMG_3D_')
 
     def _refine_boundaries(self):
+        """Refines body area estimates using Chan-Vese active contour model"""
+        denoised_image = self._process_slices_parallel(self._filter_denoise, self._image.img)
+        refined_contours = self._process_slices_parallel(self._segment_cv, denoised_image, self._image_initialised.img)
 
-        pass
+        # invert mask
+        refined_contours = (refined_contours == 0) * 1
+
+        # write refined contour data to file
+        self._image_refined.set_data(refined_contours)
+        self._image_refined.write_nii('refined_segmentation', prefix='IMG_3D_')
 
     def _sum_mask_data(self):
-        pass
+        """Sums pixels in refined mask"""
+        self.resp_raw = np.squeeze(np.sum(self._image_refined.img, axis=(0, 1)))
 
     def _gpr_filter(self):
-        pass
+        """Removes low frequency global change sin body area to extract respiration trace only"""
+
+        # define GPR kernel
+        kernel = 1.0 * RBF(length_scale=5.0, length_scale_bounds=(2, 20)) \
+                 + WhiteKernel(noise_level=50, noise_level_bounds=(10, 1e+3))
+
+        # fit GPR model
+        X = np.arange(self.resp_raw.shape[0]).reshape(-1, 1)
+        gp = GaussianProcessRegressor(kernel=kernel,
+                                      alpha=0.0).fit(X, self.resp_raw.shape)
+
+        # filter signal to extract respiration
+        self.resp_trend, y_cov = gp.predict(X, return_cov=True)
+        self.resp_trace = self.resp_raw.shape - self.resp_trend
 
     # ___________________________________________________________________
     # __________________________ Static Methods__________________________
 
     @ staticmethod
-    def _filter_median(img, kernel_size=5):
-        return medfilt2d(img, [kernel_size, kernel_size])  # median filter more robust to bands in balanced images
+    def _filter_median(imgs, kernel_size=5):
+        """
+        Median filter
+        :param imgs: slice to filter [2D]
+        :param kernel_size: size of median kernel
+        :return:
+        """
+        return medfilt2d(imgs[0], [kernel_size, kernel_size])  # median filter more robust to bands in balanced images
 
     @staticmethod
-    def _filter_denoise(image, weight=0.001):
-        return denoise_tv_bregman(image, weight=weight)
+    def _filter_denoise(imgs, weight=0.001):
+        """
+        TV denoising
+        :param imgs: slice to denoise [2D]
+        :param weight: TV weight
+        :return:
+        """
+        return restoration.denoise_tv_bregman(imgs[0], weight=weight)
 
     @staticmethod
-    def _process_slices_parallel(function_name, img, cores=4):
+    def _segment_cv(imgs, iterations=100):
+        """
+        refines initial segmentation contours
+        :param imgs: list of 2 images [2D] imgs[0] = slice to segment: imgs[1] = initial level set
+        :param iterations: number of refinement iterations
+        :return:
+        """
+        return segmentation.morphological_chan_vese(imgs[0],
+                                                    iterations,
+                                                    init_level_set=imgs[1],
+                                                    smoothing=5,
+                                                    lambda1=2.5,
+                                                    lambda2=0.5
+                                                    )
+
+    @staticmethod
+    def _process_slices_parallel(function_name, *vols, cores=None):
         """
         Runs a defined function over the slice direction on parallel threads
         :param function_name: function to be performed (must operate on a 2D image)
-        :param img: image volume (3D)
+        :param *vols: image volumes (3D) to pass to function - must be same size
         :param cores: number of cores to run on [default: 4]
         :return:
         """
+
         # start timer
         t1 = time.time()
 
-        # run parallel function
+        # convert to list
+        vols = list(vols)
+
+        # cores defaults to number of CPUs - 1
+        if cores is None:
+            cores = max(1, cpu_count() - 1)
+
+        # run function with input vols
         sub_arrays = Parallel(n_jobs=cores)(  # Use n cores
-            delayed(function_name)(img[:, :, zz])  # Apply function_name
-            for zz in range(0, img.shape[2]))  # For each 3rd dimension
+            delayed(function_name)([vols[v][:, :, zz] for v in range(0, vols.__len__())])  # Apply function_name
+            for zz in range(0, vols[0].shape[2]))  # For each 3rd dimension
 
         # print function duration info
-        print('%s took: %.1fs' % (function_name.__name__, (time.time() - t1)))
+        print('%s duration: %.1fs on %d cores' % (function_name.__name__, (time.time() - t1), cores))
 
         # return recombined array
         return np.stack(sub_arrays, axis=2)

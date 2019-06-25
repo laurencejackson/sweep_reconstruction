@@ -5,6 +5,7 @@ Estimates a respiration signal from a sequence of dynamic 2D images
 Laurence Jackson, BME, KCL, 2019
 """
 
+import numpy as np
 
 from sweeprecon.io.ArgParser import ArgParser
 from sweeprecon.EstimateRespiration import EstimateRespiration
@@ -58,7 +59,7 @@ def app_estimate_respiration(args=None):
     resp.run()
 
     # Plot and save summary of respiration
-    sts = None
+    sts = np.ones(resp.resp_trend.shape)  # TODO change to actually classifier
     plot_respiration_summary(resp.resp_raw, resp.resp_trend, resp.resp_trace, sts)
 
     # record output

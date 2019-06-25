@@ -91,5 +91,4 @@ def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summa
 
     plt.tight_layout()
 
-    if save == 1:
-        plt.savefig('fig_respiration_summary', dpi=300)
+    plt.savefig('fig_respiration_summary', dpi=300)
