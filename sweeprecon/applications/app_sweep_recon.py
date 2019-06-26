@@ -10,9 +10,8 @@ from sweeprecon.io.ArgParser import ArgParser
 from sweeprecon.applications.app_sort_image_data import app_sort_image_data
 from sweeprecon.applications.app_estimate_respiration import app_estimate_respiration
 from sweeprecon.applications.app_resample_data import app_resample_data
-
-
 from sweeprecon.utilities.LogData import LogData
+
 
 def main():
     """
