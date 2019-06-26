@@ -68,3 +68,8 @@ def app_resample_data(pipeline=False):
     resampler.run()
 
     # save output
+    logger.set_key('flag_resampled', True)
+    logger.save_log_file()
+
+    # Done
+    print('Resampling complete')

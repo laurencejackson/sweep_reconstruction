@@ -34,7 +34,6 @@ def app_sort_image_data(pipeline=False):
 
         # optional
         input_vars.add_flag_redo(required=False)
-        input_vars.add_slice_thickness(required=False)
 
         # parse
         args = input_vars.parse_args()
@@ -62,7 +61,7 @@ def app_sort_image_data(pipeline=False):
     image = ImageData(args.input)
 
     # sort image
-    image.sort_4d_to_3d(args.thickness)
+    image.sort_4d_to_3d()
 
     # save output
     image.write_nii(write_paths.path_sorted)

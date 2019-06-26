@@ -1,6 +1,6 @@
 """
 Main application
-Runs the reconstruction pipeline
+Runs the full reconstruction pipeline
 
 Laurence Jackson, BME, KCL, 2019
 """
@@ -52,11 +52,6 @@ def main():
 
     # ______________________ Re-sampling image data ______________________
     app_resample_data(pipeline=True)
-
-    print('\n________________________ Splitting patches _________________________\n')
-    print('\n___________________ Performing DSVR registration ___________________\n')
-    print('\n_________________________ Recombining data _________________________\n')
-    print('\n__________________________ Saving output ___________________________\n')
 
     return
 

@@ -50,8 +50,8 @@ class ResampleData(object):
     def _write_resampled_data(self):
         """Saves re-sampled image"""
         # TODO: can only correct for interpolation in z at the moment this is all i need for now but update for xy soon
+        self._image_4d.nii.affine[:, 2] = self._image.nii.affine[:, 2] * (self._dxyz[2] / self._image.nii.header['pixdim'][3])
 
-        self._image_4d._nii.affine[:, 2] = self._image._nii.affine[:, 2] * (self._dxyz[2] / self._image._nii.header['pixdim'][3])
         self._image_4d.set_data(self._img_4d)
         self._image_4d.write_nii(self._write_paths.path_interpolated_4d)
 
@@ -60,7 +60,7 @@ class ResampleData(object):
         print('Pre-allocating 4D volume')
         self._img_4d = np.zeros(np.array([self._image.img.shape[0],
                                  self._image.img.shape[1],
-                                 (self._image._nii.header['pixdim'][3] * self._image._nii.header['dim'][3]) / self._dxyz[2],
+                                 (self._image.nii.header['pixdim'][3] * self._image.nii.header['dim'][3]) / self._dxyz[2],
                                  self._nstates]).astype(int)
                                 )
 
@@ -68,36 +68,36 @@ class ResampleData(object):
         """Defines query points for interpolation according to resolution definition"""
 
         if self._resolution == 'isotropic':
-            self._dxyz = [self._image._nii.header['pixdim'][1],
-                          self._image._nii.header['pixdim'][1],
-                          self._image._nii.header['pixdim'][1]]
-            nslices = int((self._image._nii.header['pixdim'][3] * self._image._nii.header['dim'][3]) / self._dxyz[2])
+            self._dxyz = np.array([self._image.nii.header['pixdim'][1],
+                                   self._image.nii.header['pixdim'][1],
+                                   self._image.nii.header['pixdim'][1]])
+            nslices = int((self._image.nii.header['pixdim'][3] * self._image.nii.header['dim'][3]) / self._dxyz[2])
 
         else:
-            self._dxyz = [self._resolution,
-                          self._resolution,
-                          self._resolution]
-            nslices = int((self._image._nii.header['pixdim'][3] * self._image._nii.header['dim'][3]) / self._dxyz[2])
+            self._dxyz = np.array([self._resolution,
+                                   self._resolution,
+                                   self._resolution])
+            nslices = int((self._image.nii.header['pixdim'][3] * self._image.nii.header['dim'][3]) / self._dxyz[2])
 
         # define query points
-        self._xq = np.linspace(self._image._nii.header['pixdim'][3],
-                               self._image._nii.header['pixdim'][1] * self._image._nii.header['dim'][3],
-                               nslices)  # x-query points
+        self._xq = np.linspace(0,
+                               (self._dxyz[0] * (nslices-1)),
+                               nslices)  # z-query points
 
-        self._yq = np.linspace(self._image._nii.header['pixdim'][3],
-                               self._image._nii.header['pixdim'][2] * self._image._nii.header['dim'][3],
-                               nslices)  # y-query points
+        self._yq = np.linspace(0,
+                               (self._dxyz[1] * (nslices-1)),
+                               nslices)  # z-query points
 
-        self._zq = np.linspace(self._image._nii.header['pixdim'][3],
-                               self._image._nii.header['pixdim'][3] * self._image._nii.header['dim'][3],
+        self._zq = np.linspace(0,
+                               (self._dxyz[2] * (nslices-1)),
                                nslices)  # z-query points
 
     def _interp_fast_linear(self):
         """Linear interpolation onto regular grid - fastest interpolation method"""
 
         # define indexed points
-        self._xi = np.int_(np.linspace(0, self._image._nii.header['dim'][1] - 1, self._image._nii.header['dim'][1]))
-        self._yi = np.int_(np.linspace(0, self._image._nii.header['dim'][2] - 1, self._image._nii.header['dim'][2]))
+        self._xi = np.int_(np.linspace(0, self._image.nii.header['dim'][1] - 1, self._image.nii.header['dim'][1]))
+        self._yi = np.int_(np.linspace(0, self._image.nii.header['dim'][2] - 1, self._image.nii.header['dim'][2]))
 
         print('Interpolating z dimension')
         for ww in range(1, self._nstates + 1):
@@ -109,3 +109,8 @@ class ResampleData(object):
                 for yy in np.nditer(self._yi):
                     z_interp = np.interp(self._zq, zs, self._image.img[xx, yy, slice_idx].flatten())
                     self._img_4d[xx, yy, :, ww - 1] = z_interp.flatten()
+
+    def _interp_gpr(self):
+        """Interpolates according to a gaussian regression model"""
+        pass
+
