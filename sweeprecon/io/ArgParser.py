@@ -60,7 +60,8 @@ class ArgParser(object):
                        option_string=("-i", "--input"),
                        metavar='',
                        help="path to input file",
-                       required=True
+                       required=True,
+                       type=str
                        ):
         self._add_argument(dict(locals()))
 
@@ -69,7 +70,8 @@ class ArgParser(object):
                             metavar='',
                             help="thickness of acquired slice [mm]",
                             required=False,
-                            default=3
+                            default=2.5,
+                            type=float
                             ):
         self._add_argument(dict(locals()))
 
@@ -78,7 +80,8 @@ class ArgParser(object):
                           metavar='',
                           help="number of respiration states",
                           required=False,
-                          default=4
+                          default=4,
+                          type=int
                           ):
         self._add_argument(dict(locals()))
 
@@ -87,15 +90,15 @@ class ArgParser(object):
                       action='store_true',
                       help="redo all steps with given arguments",
                       required=False,
-                      default=False
+                      default=False,
                       ):
         self._add_argument(dict(locals()))
 
     def add_flag_disable_resp_crop(self,
-                      option_string=("-c", "--disable_crop"),
-                      action='store_false',
-                      help="disable automatic cropping of data to respiration regions",
-                      required=False,
-                      default=False
-                      ):
+                                   option_string=("-c", "--disable_crop"),
+                                   action='store_false',
+                                   help="disable automatic cropping of data to respiration regions",
+                                   required=False,
+                                   default=False,
+                                   ):
         self._add_argument(dict(locals()))

@@ -34,10 +34,10 @@ def app_sort_image_data(pipeline=False):
 
         # optional
         input_vars.add_flag_redo(required=False)
+        input_vars.add_slice_thickness(required=False)
 
         # parse
         args = input_vars.parse_args()
-
         # save args to logger
         logger.set_key('args', args)
 
@@ -45,7 +45,7 @@ def app_sort_image_data(pipeline=False):
     else:
         # load LogData
         logger.load_log_file()
-        args = logger.args
+        args = logger.log.args
 
     # initialise write paths
     write_paths = WritePaths(os.path.basename(args.input))
@@ -62,13 +62,14 @@ def app_sort_image_data(pipeline=False):
     image = ImageData(args.input)
 
     # sort image
-    image.sort_4d_to_3d()
+    image.sort_4d_to_3d(args.thickness)
 
     # save output
     image.write_nii(write_paths.path_sorted)
 
     # record output
     logger.set_key('input_data_sorted', write_paths.path_sorted)
+    logger.set_key('geo_slice_locations', image.slice_positions())
     logger.set_key('args', args)
     logger.save_log_file()
 

@@ -30,13 +30,20 @@ class WritePaths(object):
         self.path_initialised_contours = \
             os.path.join(os.getcwd(),  # cwd
                          'IMG_3D_' +  # prefix
-                         'initialised_contours' +  # basename
+                         'contours_initialised' +  # basename
                          self._nii_ext  # file ext
                          )
 
         self.path_refined_contours = \
             os.path.join(os.getcwd(),  # cwd
                          'IMG_3D_' +  # prefix
-                         'refined_contours' +  # basename
+                         'contours_refined' +  # basename
+                         self._nii_ext  # file ext
+                         )
+
+        self.path_filtered_contours = \
+            os.path.join(os.getcwd(),  # cwd
+                         'IMG_3D_' +  # prefix
+                         'contours_filtered' +  # basename
                          self._nii_ext  # file ext
                          )

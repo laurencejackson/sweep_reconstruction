@@ -9,6 +9,8 @@ Laurence Jackson, BME, KCL, 2019
 from sweeprecon.io.ArgParser import ArgParser
 from sweeprecon.applications.app_sort_image_data import app_sort_image_data
 from sweeprecon.applications.app_estimate_respiration import app_estimate_respiration
+from sweeprecon.applications.app_resample_data import app_resample_data
+
 
 from sweeprecon.utilities.LogData import LogData
 
@@ -37,7 +39,7 @@ def main():
 
     # store args in logger
     logger = LogData()
-    logger.args = args
+    logger.set_key('args', args)
     logger.save_log_file()
 
     # ________________________ Sorting image data ________________________
@@ -49,9 +51,9 @@ def main():
     # _______________________ Estimating respiration _____________________
     app_estimate_respiration(pipeline=True)
 
-    # ___________________ Classify respiration states ____________________
+    # ______________________ Re-sampling image data ______________________
+    app_resample_data(pipeline=True)
 
-    print('\n______________________ Re-sampling image data ______________________\n')
     print('\n________________________ Splitting patches _________________________\n')
     print('\n___________________ Performing DSVR registration ___________________\n')
     print('\n_________________________ Recombining data _________________________\n')

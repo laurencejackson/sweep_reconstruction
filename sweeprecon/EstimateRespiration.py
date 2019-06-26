@@ -17,8 +17,6 @@ from skimage import restoration, measure, segmentation
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 
-#TMEP
-import matplotlib.pyplot as plt
 
 class EstimateRespiration(object):
 
@@ -108,7 +106,11 @@ class EstimateRespiration(object):
 
         # crop data to defined limits
         rect = np.array([[centerline - width, 0], [centerline + width, sz[0]]], dtype=int)
+
+        # crop all image copies
         self._image.square_crop(rect=rect)
+        self._image_initialised.square_crop(rect=rect)
+        self._image_refined.square_crop(rect=rect)
 
         # write output
         self._image.write_nii(self._write_paths.path_cropped)
@@ -137,9 +139,15 @@ class EstimateRespiration(object):
 
     def _refine_boundaries(self):
         """Refines body area estimates using Chan-Vese active contour model"""
-        filtered_image = self._process_slices_parallel(self._filter_median, self._image.img)
+
+        # filter and segment
+        filtered_image = self._process_slices_parallel(self._filter_denoise, self._image.img)
         filtered_image = self._process_slices_parallel(self._filter_inv_gauss, filtered_image)
         refined_contours = self._process_slices_parallel(self._segment_gac, filtered_image, self._image_initialised.img)
+
+        # save filtered image
+        self._image_refined.set_data(filtered_image)
+        self._image_refined.write_nii(self._write_paths.path_filtered_contours)
 
         # invert mask
         refined_contours = (refined_contours == 0) * 1

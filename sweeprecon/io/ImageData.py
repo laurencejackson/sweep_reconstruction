@@ -4,7 +4,6 @@ Input parser for command line operation
 Laurence Jackson, BME, KCL 2019
 """
 
-import os
 import nibabel as nib
 import numpy as np
 
@@ -38,7 +37,7 @@ class ImageData(object):
     def set_data(self, img):
         self.img = img
 
-    def sort_4d_to_3d(self):
+    def sort_4d_to_3d(self, slice_thickness):
         """Sorts image data from 4D to 3D and writes new NIfTI"""
 
         n_dynamics = self._nii.header['dim'][4]
@@ -63,6 +62,7 @@ class ImageData(object):
         self._nii.header['dim'][4] = 1
         self._nii.header['xyzt_units'] = 2
         # time/slice used later to calculate sampling frequency
+        self._nii.header['pixdim'][3] = slice_thickness / n_dynamics
         self._nii.header['pixdim'][4] = self._nii.header['pixdim'][4] / self.img.shape[3]
 
         # set reshaped data
@@ -124,3 +124,7 @@ class ImageData(object):
         self._nii.affine[:3, 3] = new_origin
 
         self._nii.header['dim'][[1, 2, 3]] = self.img.shape
+
+    def slice_positions(self):
+        """returns vector of slice positions relative to origin [in mm]"""
+        return np.linspace(0, (self._nii.header["pixdim"][3] * self.img.shape[2]) + self._nii.header["pixdim"][3], self.img.shape[2])
