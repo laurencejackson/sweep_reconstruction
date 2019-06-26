@@ -7,6 +7,10 @@ Laurence Jackson, BME, KCL 2019
 import copy
 import numpy as np
 
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, WhiteKernel
+from joblib import delayed, Parallel, cpu_count
+
 # debug
 import matplotlib.pyplot as plt
 
@@ -41,6 +45,8 @@ class ResampleData(object):
         # perform chosen interpolation
         if self._interp_method == 'fast_linear':
             self._interp_fast_linear()
+        if self._interp_method == 'gpr':
+            self._interp_gpr()
         else:
             raise Exception('\nInvalid data re-sampling method\n')
 
@@ -59,9 +65,9 @@ class ResampleData(object):
         """pre-allocates memory for interpolated volumes"""
         print('Pre-allocating 4D volume')
         self._img_4d = np.zeros(np.array([self._image.img.shape[0],
-                                 self._image.img.shape[1],
-                                 (self._image.nii.header['pixdim'][3] * self._image.nii.header['dim'][3]) / self._dxyz[2],
-                                 self._nstates]).astype(int)
+                                self._image.img.shape[1],
+                                (self._image.nii.header['pixdim'][3] * self._image.nii.header['dim'][3]) / self._dxyz[2],
+                                self._nstates]).astype(int)
                                 )
 
     def _get_query_points(self):
@@ -112,5 +118,35 @@ class ResampleData(object):
 
     def _interp_gpr(self):
         """Interpolates according to a gaussian regression model"""
-        pass
+        # define indexed points
+        self._xi = np.int_(np.linspace(0, self._image.nii.header['dim'][1] - 1, self._image.nii.header['dim'][1]))
+        self._yi = np.int_(np.linspace(0, self._image.nii.header['dim'][2] - 1, self._image.nii.header['dim'][2]))
 
+        # Instantiate a Gaussian Process model
+        kernel = 1.0 * RBF(length_scale=10, length_scale_bounds=(5, 20)) \
+                 + WhiteKernel(noise_level=50, noise_level_bounds=(10, 100))
+
+        gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
+
+        for ww in range(1, self._nstates + 1):
+            print('Interpolating resp window: %d' % ww)
+
+            slice_idx = np.where(self._states == ww)
+            zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
+
+            sub_arrays = Parallel(n_jobs=4)(delayed(self._gpr_fit_line)  # function name
+                                            (self._image.img[xx, yy, slice_idx].flatten().reshape(-1, 1),  # input args
+                                            zs.reshape(-1, 1), self._zq.reshape(-1, 1), gp)
+                                            for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop def
+
+            index = 0
+            for xx in np.nditer(self._xi):
+                for yy in np.nditer(self._yi):
+                    self._img_4d[xx, yy, :, ww-1] = sub_arrays[index].flatten()
+                    index = index + 1
+
+    @staticmethod
+    def _gpr_fit_line(y, zs, zq, gp):
+        gp.fit(zs, y)
+        y_gpr = gp.predict(zq)
+        return y_gpr
