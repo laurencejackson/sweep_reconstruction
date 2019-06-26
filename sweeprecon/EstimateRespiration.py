@@ -122,9 +122,9 @@ class EstimateRespiration(object):
         filtered_image = self._process_slices_parallel(self._filter_median, self._image.img)
 
         # determine threshold of background data
-        thresh = np.max(filtered_image[[0, filtered_image.shape[0] - 1], :, :]) - (0.5 * np.std(filtered_image[[0, filtered_image.shape[0] - 1], :, :]))
+        thresh = np.mean(filtered_image[[0, filtered_image.shape[0] - 1], :, :]) + (0.5 * np.std(filtered_image[[0, filtered_image.shape[0] - 1], :, :]))
 
-        # apply threshold - and always include top and bottom two rows in mask
+        # apply threshold - always include top and bottom two rows in mask (limited to sagittal at the moment)
         img_thresh = filtered_image <= thresh
         img_thresh[[0, filtered_image.shape[0] - 1], :, :] = 1  # always include most anterior/posterior rows in mask
 
@@ -140,9 +140,15 @@ class EstimateRespiration(object):
     def _refine_boundaries(self):
         """Refines body area estimates using Chan-Vese active contour model"""
 
-        # filter and segment
+        # filter/pre-process image
         filtered_image = self._process_slices_parallel(self._filter_denoise, self._image.img)
         filtered_image = self._process_slices_parallel(self._filter_inv_gauss, filtered_image)
+
+        # save filtered image
+        self._image_refined.set_data(filtered_image)
+        self._image_refined.write_nii(self._write_paths.path_filtered_contours)
+
+        # refine segmentation
         refined_contours = self._process_slices_parallel(self._segment_gac, filtered_image, self._image_initialised.img)
 
         # save filtered image

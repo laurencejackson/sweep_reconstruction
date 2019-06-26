@@ -77,6 +77,9 @@ def app_estimate_respiration(pipeline=False):
     logger.set_key('resp_trend', resp.resp_trend)
     logger.set_key('resp_trace', resp.resp_trace)
     logger.set_key('resp_states', classifier.index)
+
+    # log complete
+    logger.set_key('flag_estimated_respiration', True)
     logger.save_log_file()
 
     # Done

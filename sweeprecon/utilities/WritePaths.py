@@ -1,5 +1,5 @@
 """
-List of definitions for various points in program - edit here to prevent renaming bugs
+List of file paths for various points in program - edit here to prevent bugs from renaming
 
 Laurence Jackson, BME, KCL, 2019
 """
@@ -46,4 +46,10 @@ class WritePaths(object):
                          'IMG_3D_' +  # prefix
                          'contours_filtered' +  # basename
                          self._nii_ext  # file ext
+                         )
+
+        self.path_interpolated_4d = \
+            os.path.join(os.getcwd(),  # cwd
+                         'IMG_4D_interpolated_' +  # prefix
+                         basename  # basename
                          )

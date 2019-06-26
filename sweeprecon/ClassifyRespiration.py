@@ -15,7 +15,7 @@ class ClassifyRespiration(object):
     def __init__(self, resp_trace):
         """init object"""
         self._resp_trace = resp_trace
-        self.index = np.zeros([self._resp_trace.shape[0]])
+        self.index = np.zeros([self._resp_trace.shape[0]]).astype(int)
 
     def classify_states(self, nstates):
         """Classify every image in nstates[int] states"""

@@ -35,6 +35,10 @@ class LogData(object):
             self.log.resp_trend = None
             self.log.resp_trace = None
 
+            self.log.flag_sorted = False
+            self.log.flag_estimated_respiration = False
+            self.log.flag_resampled = False
+
     def set_key(self, key, value):
         self.log.__setattr__(key, value)
 

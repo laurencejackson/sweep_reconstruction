@@ -71,6 +71,9 @@ def app_sort_image_data(pipeline=False):
     logger.set_key('input_data_sorted', write_paths.path_sorted)
     logger.set_key('geo_slice_locations', image.slice_positions())
     logger.set_key('args', args)
+
+    # log complete
+    logger.set_key('flag_sorted', True)
     logger.save_log_file()
 
     # Done

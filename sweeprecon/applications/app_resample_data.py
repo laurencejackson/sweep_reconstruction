@@ -6,6 +6,7 @@ Laurence Jackson, BME, KCL, 2019
 """
 
 import os
+import sys
 
 from sweeprecon.ResampleData import ResampleData
 from sweeprecon.io.ArgParser import ArgParser
@@ -51,9 +52,15 @@ def app_resample_data(pipeline=False):
         write_paths = WritePaths(os.path.basename(args.input))
         image = ImageData(write_paths.path_sorted)
 
+    if not logger.log.flag_estimated_respiration or not logger.log.flag_sorted:
+        print('Missing requirements: please run full pipeline through __main__')
+        sys.exit()
+
     # set up re-sampler
     resampler = ResampleData(image,
-                             args.log.resp_states,
+                             logger.log.resp_states,
+                             logger.log.geo_slice_locations,
+                             write_paths,
                              interp_method='fast_linear'
                              )
 
