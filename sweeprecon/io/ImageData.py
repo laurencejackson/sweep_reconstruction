@@ -72,7 +72,12 @@ class ImageData(object):
 
     def get_fs(self):
         """Estimates the sampling frequency in Hz from the NIfTI header"""
-        return 1/self.nii.header['pixdim'][4]
+        if self.nii.header['pixdim'][4] == 0:
+            print('No temporal pixel information - using defualt sampling frequency (1.2Hz)')
+            fs = 1.2
+        else:
+            fs = 1 / self.nii.header['pixdim'][4]
+        return fs
 
     def square_crop(self, rect=None, crop_z=None):
         """

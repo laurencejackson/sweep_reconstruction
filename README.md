@@ -10,17 +10,15 @@ An outline of the reconstruction pipeline is given in the figure below. For more
 
 <p align="center"><img width="600" src="./data/figures/Figure_1_pipeline.png"></p>
 
-## Example
-```
-Usage:
-     sweeprecon -i path_to_nii <optional args>
-     
-     Optional arguments:
-     --thickness <float>       :: thickness of acquisition slices in mm (default 4mm)
-     --nstates <int>           :: number of respiration states to receonstruct to (defualt 4)
-     --recon_thickness <float> :: thickness of reconstructed slices in mm (default isotropic)
-     --redo                    :: flag to redo processing from scratch
-     --resort_only             :: flag to stop processing after resort step
-     --crop <float>            :: factor to crop from either side of image for bodyarea mask (default 0.2)
-```
+## Installation
+
+### Requirements
+
+### Get the code
+
+## Usage
+
+### Full pipeline
+
+### Individual modules
 

@@ -5,6 +5,7 @@ Laurence Jackson, BME, KCL 2019
 """
 
 import copy
+import time
 import numpy as np
 
 from sklearn.gaussian_process import GaussianProcessRegressor
@@ -128,13 +129,18 @@ class ResampleData(object):
 
         gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
 
+        cores = cpu_count()
+
+        # start timer
+        t1 = time.time()
+
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d' % ww)
 
             slice_idx = np.where(self._states == ww)
             zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
-            sub_arrays = Parallel(n_jobs=4)(delayed(self._gpr_fit_line)  # function name
+            sub_arrays = Parallel(n_jobs=cores)(delayed(self._gpr_fit_line)  # function name
                                             (self._image.img[xx, yy, slice_idx].flatten().reshape(-1, 1),  # input args
                                             zs.reshape(-1, 1), self._zq.reshape(-1, 1), gp)
                                             for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop def
@@ -144,6 +150,9 @@ class ResampleData(object):
                 for yy in np.nditer(self._yi):
                     self._img_4d[xx, yy, :, ww-1] = sub_arrays[index].flatten()
                     index = index + 1
+
+        # print function duration info
+        print('%s duration: %.1fs [%d threads]' % ('_interp_gpr', (time.time() - t1), cores))
 
     @staticmethod
     def _gpr_fit_line(y, zs, zq, gp):
