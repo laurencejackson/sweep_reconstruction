@@ -1,7 +1,7 @@
 """
 Input parser for command line operation
-Laurence Jackson, BME, KCL 2019
 
+Laurence Jackson, BME, KCL 2019
 """
 
 import argparse
@@ -19,7 +19,7 @@ class ArgParser(object):
         # initialise _parser object
         self._parser = argparse.ArgumentParser(**kwargs)
 
-        # Create group for named required arguments so these are listed separately
+        # Create group for named required arguments so thesargparse.ArgumentParsere are listed separately
         self._parser_req = self._parser.add_argument_group('required arguments')
 
     @staticmethod
@@ -28,12 +28,7 @@ class ArgParser(object):
             print('%s:   %s' % (arg, getattr(args, arg)))
 
     def parse_args(self):
-        try:
-            self._parser.parse_args()
-        except SystemExit:
-            self._parser.print_help()
-            raise IOError('Input argument error: refer to usage info')
-
+        """Parse input arguments"""
         return self._parser.parse_args()
 
     def _add_argument(self, allvars):
@@ -65,7 +60,8 @@ class ArgParser(object):
                        option_string=("-i", "--input"),
                        metavar='',
                        help="path to input file",
-                       required=True
+                       required=True,
+                       type=str
                        ):
         self._add_argument(dict(locals()))
 
@@ -74,7 +70,8 @@ class ArgParser(object):
                             metavar='',
                             help="thickness of acquired slice [mm]",
                             required=False,
-                            default=3
+                            default=2.5,
+                            type=float
                             ):
         self._add_argument(dict(locals()))
 
@@ -83,15 +80,25 @@ class ArgParser(object):
                           metavar='',
                           help="number of respiration states",
                           required=False,
-                          default=4
+                          default=4,
+                          type=int
                           ):
         self._add_argument(dict(locals()))
 
-    def add_redo_flag(self,
+    def add_flag_redo(self,
                       option_string=("-r", "--redo"),
                       action='store_true',
                       help="redo all steps with given arguments",
                       required=False,
-                      default=False
+                      default=False,
                       ):
+        self._add_argument(dict(locals()))
+
+    def add_flag_disable_resp_crop(self,
+                                   option_string=("-c", "--disable_crop"),
+                                   action='store_false',
+                                   help="disable automatic cropping of data to respiration regions",
+                                   required=False,
+                                   default=False,
+                                   ):
         self._add_argument(dict(locals()))

@@ -1,3 +1,9 @@
+"""
+Runs full reconstruction pipeline
+
+Laurence Jackson, BME, KCL, 2019
+"""
+
 import sys
 
 from sweeprecon.applications.app_sweep_recon import main

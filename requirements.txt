@@ -1,2 +1,8 @@
+statsmodels
+scikit-learn
+joblib
+scikit-image
+scipy
+matplotlib
 nibabel
 numpy
