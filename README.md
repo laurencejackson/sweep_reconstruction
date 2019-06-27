@@ -17,7 +17,9 @@ The pipeline performs the following functions.
 2. Estimate respiration and classify slices into respiration states
 3. Resample image data into isotropic respiration resolved volumes
 
-An example reconstruction using this software is given below. The data shows a rapid 2D bSSFP acquisiton utilising the SWEEP method. The figure below shows how the method is able to effectively correct for respiration induced motion and recover the temporal information while suppresing motion artefacts.  
+An example reconstruction using this software is given below. The data shows a rapid 2D bSSFP acquisiton utilising the SWEEP method. The figure below shows how the method is able to effectively correct for respiration induced motion and recover the temporal information while suppresing motion artefacts. 
+
+The left column images shows the raw input data, the data is static and shows no motion in the acqusition plane (top row) and motion corruption in the through plane direction (bottom row). After reconstruction with the `fast_linear` interpolation method the motion is corrected and the temporal component recovered (middle column). Using the slower `gpr` resampling method a smoother result is obtained (right column).
 
 <p align="center">
   <img src="./data/figures/IMG_3D_sag.png" width="200" />
@@ -30,6 +32,7 @@ An example reconstruction using this software is given below. The data shows a r
   <img src="./data/figures/cor_lin.gif" width="200" /> 
   <img src="./data/figures/cor_gpr.gif" width="200" />
 </p>
+
 
 ### Example
 The software takes as an input a dense stack of rapid-acquisition 2D images that are acquired fast enough to freeze in plane motion, but suffer from motion corruption in the through plane direction.

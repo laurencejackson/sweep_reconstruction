@@ -50,6 +50,7 @@ class ResampleData(object):
         self._init_vols()
 
         # perform chosen interpolation
+        print('Re-sampling method: %s' % self._interp_method)
         if self._interp_method == 'fast_linear':
             self._interp_fast_linear()
         if self._interp_method == 'gpr':

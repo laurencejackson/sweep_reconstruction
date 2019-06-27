@@ -35,6 +35,7 @@ def app_resample_data(pipeline=False):
 
         # optional
         input_vars.add_flag_redo(required=False)
+        input_vars.add_interpolater(required=False)
 
         # parse
         args = input_vars.parse_args()
@@ -61,7 +62,7 @@ def app_resample_data(pipeline=False):
                              logger.log.resp_states,
                              logger.log.geo_slice_locations,
                              write_paths,
-                             interp_method='gpr'
+                             interp_method=args.interpolater
                              )
 
     # run re-sampling
