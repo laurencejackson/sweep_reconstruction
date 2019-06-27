@@ -12,9 +12,6 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 from joblib import delayed, Parallel, cpu_count
 
-# debug
-import matplotlib.pyplot as plt
-
 
 class ResampleData(object):
 
@@ -26,6 +23,15 @@ class ResampleData(object):
                  resolution='isotropic',
                  interp_method='fast_linear'
                  ):
+        """
+        initilises ResampleData
+        :param image: ImageData object containing input image
+        :param states: vector mapping each slice of image to a respiration state
+        :param slice_locations: vector mapping each slice to a spatial position relative to origin
+        :param write_paths: WritePaths object containing paths to write output
+        :param resolution: resolution of output - defualts to 'isotropic' but also takes a float [mm]
+        :param interp_method: method for interpolation, 'fast_linear' or 'gpr' (slower and smoother)
+        """
 
         self._image = image
         self._image_4d = copy.deepcopy(image)
@@ -127,7 +133,7 @@ class ResampleData(object):
         kernel = 1.0 * RBF(length_scale=10, length_scale_bounds=(5, 20)) \
                  + WhiteKernel(noise_level=50, noise_level_bounds=(10, 100))
 
-        gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
+        gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=4)
 
         cores = cpu_count()
 
@@ -141,9 +147,9 @@ class ResampleData(object):
             zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
             sub_arrays = Parallel(n_jobs=cores)(delayed(self._gpr_fit_line)  # function name
-                                            (self._image.img[xx, yy, slice_idx].flatten().reshape(-1, 1),  # input args
-                                            zs.reshape(-1, 1), self._zq.reshape(-1, 1), gp)
-                                            for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop def
+                                                (self._image.img[xx, yy, slice_idx].flatten().reshape(-1, 1),  # input args
+                                                 zs.reshape(-1, 1), self._zq.reshape(-1, 1), gp)
+                                                for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop def
 
             index = 0
             for xx in np.nditer(self._xi):
