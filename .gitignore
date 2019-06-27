@@ -59,4 +59,5 @@ target/
 
 # other
 .idea/
+idea/
 test_dump/

@@ -2,7 +2,7 @@
 
 ---
 ## Introduction
-This repository contains reconstruction code for respiration resolved reconstruction of dynamic 2D MRI images. Although the code is described in the context of a SWEEP acqusition is it applicable to any sequence of 2D images acquired in a linear (ascending or descending) order. The code presented here builds upon the reconstructiion pipeline described in the paper below. If you find this code useful please acknowledge this paper. 
+This repository contains reconstruction code for respiration resolved reconstruction of dynamic 2D MRI images. Although the code is described in the context of a SWEEP acquisition is it applicable to any sequence of 2D images acquired in a linear (ascending or descending) order. The code presented here builds upon the reconstruction pipeline described in the paper below. If you find this code useful please acknowledge this paper. 
  
 > Jackson, LH, Price, AN, Hutter, J et al. Respiration resolved imaging with continuous stable state 2D acquisition using linear frequency SWEEP. Magn Reson Med. 2019; 00: 1– 15. https://doi.org/10.1002/mrm.27834 
 
@@ -13,13 +13,16 @@ An outline of the reconstruction pipeline is given in the figure below. For more
 <p align="center"><img width="600" src="./data/figures/Figure_1_pipeline.png"></p>
 
 The pipeline performs the following functions.
-1. Sort image data (dyanmic 4D data converted to interleaved 3D)
+1. Sort image data (dynamic 4D data converted to interleaved 3D)
 2. Estimate respiration and classify slices into respiration states
 3. Resample image data into isotropic respiration resolved volumes
 
-An example reconstruction using this software is given below. The data shows a rapid 2D bSSFP acquisiton utilising the SWEEP method. The figure below shows how the method is able to effectively correct for respiration induced motion and recover the temporal information while suppresing motion artefacts. 
+### Example
+The software takes as an input a dense stack of rapid-acquisition 2D images that are acquired fast enough to freeze in plane motion, but suffer from motion corruption in the through plane direction.
 
-The left column images shows the raw input data, the data is static and shows no motion in the acqusition plane (top row) and motion corruption in the through plane direction (bottom row). After reconstruction with the `fast_linear` interpolation method the motion is corrected and the temporal component recovered (middle column). Using the slower `gpr` resampling method a smoother result is obtained (right column).
+An example reconstruction using this software is given below. The data shows a rapid 2D bSSFP acquisition utilising the SWEEP method for fetal/placental imaging. The figure below shows how the method is able to effectively correct for respiration induced motion and recover the temporal information (maternal respiration) while suppressing motion artefacts. 
+
+The left column images shows the raw input data, the data is static and shows no motion in the acquisition plane (top row) and motion corruption in the through plane direction (bottom row). After reconstruction with the `fast_linear` interpolation method the motion is corrected and the temporal component recovered (middle column). Using the slower `gpr` resampling method a smoother result is obtained (right column).
 
 <p align="center">
   <img src="./data/figures/IMG_3D_sag.png" width="200" />
@@ -33,18 +36,13 @@ The left column images shows the raw input data, the data is static and shows no
   <img src="./data/figures/cor_gpr.gif" width="200" />
 </p>
 
-
-### Example
-The software takes as an input a dense stack of rapid-acquisition 2D images that are acquired fast enough to freeze in plane motion, but suffer from motion corruption in the through plane direction.
-
-
 ## Installation
-The code was developed in python 3.5 on a windows machine running [Anaconda](https://www.anaconda.com/) and makes us of a number of 3rd party libraries (see requirements.txt), it is encessary to install these before running the code. 
+The code was developed in python 3.5 on a windows machine running [Anaconda](https://www.anaconda.com/) and makes us of a number of 3rd party libraries (see requirements.txt), it is necessary to install these before running the code. 
 
 To view the output an image viewer which preserves NIfTI geometry is required - I recommend [MITK workbench](http://mitk.org/wiki/Downloads)
 
 #### Optional
-It is recommened that you set up a new virtual environement to contain the code and dependencies: 
+It is recommended that you set up a new virtual environment to contain the code and dependencies: 
 ~~~~
 python -m venv sweep_venv
 source sweep_venv/lib/activate
