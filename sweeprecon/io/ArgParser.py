@@ -85,6 +85,15 @@ class ArgParser(object):
                           ):
         self._add_argument(dict(locals()))
 
+    def add_interpolater(self,
+                         option_string=("-x", "--interpolater"),
+                         metavar='',
+                         help="choose interpolater to use [options: 'fast_linear' or 'gpr']",
+                         required=False,
+                         default='fast_linear'
+                         ):
+        self._add_argument(dict(locals()))
+
     def add_flag_redo(self,
                       option_string=("-r", "--redo"),
                       action='store_true',
