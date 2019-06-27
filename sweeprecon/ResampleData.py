@@ -136,7 +136,7 @@ class ResampleData(object):
 
         gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=4)
 
-        cores = cpu_count()
+        cores = max(1, cpu_count()-1)
 
         # start timer
         t1 = time.time()
