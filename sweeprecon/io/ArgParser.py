@@ -95,12 +95,13 @@ class ArgParser(object):
         self._add_argument(dict(locals()))
 
     def add_kernel_dims(self,
-                         option_string=("-k", "--kernel_dims"),
-                         metavar='',
-                         help="number of dimensions in gpr interpolation kernel [options: 1, 3]",
-                         required=False,
-                         default=1
-                         ):
+                        option_string=("-k", "--kernel_dims"),
+                        metavar='',
+                        help="number of dimensions in gpr interpolation kernel [options: 1, 3]",
+                        required=False,
+                        type=int,
+                        default=1
+                        ):
         self._add_argument(dict(locals()))
 
     def add_flag_redo(self,
