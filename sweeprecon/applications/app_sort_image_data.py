@@ -34,9 +34,11 @@ def app_sort_image_data(pipeline=False):
 
         # optional
         input_vars.add_flag_redo(required=False)
+        input_vars.add_interpolater(required=False)
 
         # parse
         args = input_vars.parse_args()
+
         # save args to logger
         logger.set_key('args', args)
 
