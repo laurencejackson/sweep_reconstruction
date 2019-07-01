@@ -25,7 +25,8 @@ class EstimateRespiration(object):
                  write_paths,
                  method='body_area',
                  disable_crop_data=False,
-                 plot_figures=True
+                 plot_figures=True,
+                 n_threads=0
                  ):
         """
         Defines methods for estimating respiration from an image
@@ -46,6 +47,8 @@ class EstimateRespiration(object):
         self.resp_raw = None
         self.resp_trend = None
         self.resp_trace = None
+
+        self._n_threads = n_threads
 
         self._write_paths = write_paths
 
@@ -119,7 +122,10 @@ class EstimateRespiration(object):
         """Initialises body area boundaries"""
 
         # Filter image data to reduce errors in first contour estimate
-        filtered_image = self._process_slices_parallel(self._filter_median, self._image.img)
+        filtered_image = self._process_slices_parallel(self._filter_median,
+                                                       self._image.img,
+                                                       cores=self._n_threads
+                                                       )
 
         # determine threshold of background data
         thresh = np.mean(filtered_image[[0, filtered_image.shape[0] - 1], :, :]) + (0.5 * np.std(filtered_image[[0, filtered_image.shape[0] - 1], :, :]))
@@ -141,15 +147,23 @@ class EstimateRespiration(object):
         """Refines body area estimates using Chan-Vese active contour model"""
 
         # filter/pre-process image
-        filtered_image = self._process_slices_parallel(self._filter_denoise, self._image.img)
-        filtered_image = self._process_slices_parallel(self._filter_inv_gauss, filtered_image)
+        filtered_image = self._process_slices_parallel(self._filter_denoise,
+                                                       self._image.img,
+                                                       cores=self._n_threads)
+
+        filtered_image = self._process_slices_parallel(self._filter_inv_gauss,
+                                                       filtered_image,
+                                                       cores=self._n_threads)
 
         # save filtered image
         self._image_refined.set_data(filtered_image)
         self._image_refined.write_nii(self._write_paths.path_filtered_contours)
 
         # refine segmentation
-        refined_contours = self._process_slices_parallel(self._segment_gac, filtered_image, self._image_initialised.img)
+        refined_contours = self._process_slices_parallel(self._segment_gac,
+                                                         filtered_image,
+                                                         self._image_initialised.img,
+                                                         cores=self._n_threads)
 
         # save filtered image
         self._image_refined.set_data(filtered_image)
@@ -253,7 +267,7 @@ class EstimateRespiration(object):
                                                                   )
 
     @staticmethod
-    def _process_slices_parallel(function_name, *vols, cores=None):
+    def _process_slices_parallel(function_name, *vols, cores=0):
         """
         Runs a defined function over the slice direction on parallel threads
         :param function_name: function to be performed (must operate on a 2D image)
@@ -269,7 +283,7 @@ class EstimateRespiration(object):
         vols = list(vols)
 
         # cores defaults to number of CPUs - 1
-        if cores is None:
+        if cores is 0:
             cores = max(1, cpu_count() - 1)
 
         # run function with input vols

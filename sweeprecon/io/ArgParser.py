@@ -66,7 +66,7 @@ class ArgParser(object):
         self._add_argument(dict(locals()))
 
     def add_slice_thickness(self,
-                            option_string=("-t", "--thickness"),
+                            option_string=("-z", "--thickness"),
                             metavar='',
                             help="thickness of acquired slice [mm]",
                             required=False,
@@ -102,6 +102,16 @@ class ArgParser(object):
                         type=int,
                         default=1
                         ):
+        self._add_argument(dict(locals()))
+
+    def add_n_threads(self,
+                      option_string=("-t", "--n_threads"),
+                      metavar='',
+                      help="number of processor threads to use [default: max(1, N_cpu - 1)]",
+                      required=False,
+                      type=int,
+                      default=0
+                      ):
         self._add_argument(dict(locals()))
 
     def add_flag_redo(self,

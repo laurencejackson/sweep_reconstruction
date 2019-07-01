@@ -22,7 +22,8 @@ class ResampleData(object):
                  write_paths,
                  interp_method,
                  resolution='isotropic',
-                 kernel_dims=1
+                 kernel_dims=1,
+                 n_threads=0
                  ):
         """
         initilises ResampleData
@@ -43,6 +44,7 @@ class ResampleData(object):
         self._resolution = resolution
         self._nstates = np.max(states)
         self._kernel_dims = kernel_dims
+        self._n_threads = n_threads
 
     def run(self):
         """Runs chosen re-sampling scheme """
@@ -138,7 +140,11 @@ class ResampleData(object):
 
         gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=0, normalize_y=True)
 
-        cores = max(1, cpu_count()-1)
+        if self._n_threads is 0:
+            cores = max(1, cpu_count()-1)
+        else:
+            cores = self._n_threads
+
         length_scale = 3
 
         if self._kernel_dims > 1:
