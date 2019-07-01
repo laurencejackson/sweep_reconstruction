@@ -64,7 +64,6 @@ def app_estimate_respiration(pipeline=False):
                                write_paths,
                                method='body_area',  # currently only body_area but space for other methods,
                                disable_crop_data=args.disable_crop,
-                               kernel_dims=args.kernel_dims
                                )
     resp.run()
 
