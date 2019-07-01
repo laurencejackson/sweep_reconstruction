@@ -50,8 +50,8 @@ class WritePaths(object):
 
         self.path_interpolated_4d = \
             os.path.join(os.getcwd(),  # cwd
-                         'IMG_4D_interpolated_' +  # prefix
-                         args.interpolator +  # basename
-                         '_' +
+                         'IMG_4D_interpolated_' +
+                         args.interpolator + '_' +
+                         str(args.kernel_dims) + 'D_kernel_' +
                          self.basename
                          )

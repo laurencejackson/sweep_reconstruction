@@ -32,6 +32,7 @@ def main():
     input_vars.add_flag_redo(required=False)
     input_vars.add_flag_disable_resp_crop(required=False)
     input_vars.add_interpolator(required=False)
+    input_vars.add_kernel_dims(required=False)
 
     # parse
     args = input_vars.parse_args()

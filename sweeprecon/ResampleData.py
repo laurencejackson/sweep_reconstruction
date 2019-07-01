@@ -21,7 +21,8 @@ class ResampleData(object):
                  slice_locations,
                  write_paths,
                  interp_method,
-                 resolution='isotropic'
+                 resolution='isotropic',
+                 kernel_dims=1
                  ):
         """
         initilises ResampleData
@@ -41,6 +42,7 @@ class ResampleData(object):
         self._interp_method = interp_method
         self._resolution = resolution
         self._nstates = np.max(states)
+        self._kernel_dims = kernel_dims
 
     def run(self):
         """Runs chosen re-sampling scheme """
@@ -124,19 +126,23 @@ class ResampleData(object):
                     z_interp = np.interp(self._zq, zs, self._image.img[xx, yy, slice_idx].flatten())
                     self._img_4d[xx, yy, :, ww - 1] = z_interp.flatten()
 
-    def _interp_gpr(self):
+    def _interp_gpr(self, kernel_3d=False):
         """Interpolates according to a gaussian regression model"""
         # define indexed points
         self._xi = np.int_(np.linspace(0, self._image.nii.header['dim'][1] - 1, self._image.nii.header['dim'][1]))
         self._yi = np.int_(np.linspace(0, self._image.nii.header['dim'][2] - 1, self._image.nii.header['dim'][2]))
 
         # Instantiate a Gaussian Process model
-        kernel = 1.0 * RBF(length_scale=10, length_scale_bounds=(5, 20)) \
-                 + WhiteKernel(noise_level=50, noise_level_bounds=(10, 100))
+        kernel = 1.0 * RBF(length_scale=12, length_scale_bounds=(5, 25)) \
+                 + WhiteKernel(noise_level=20, noise_level_bounds=(5, 50))
 
-        gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=4)
+        gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=0, normalize_y=True)
 
         cores = max(1, cpu_count()-1)
+        length_scale = 3
+
+        if self._kernel_dims > 1:
+            kernel_3d = True
 
         # start timer
         t1 = time.time()
@@ -145,11 +151,16 @@ class ResampleData(object):
             print('Interpolating resp window: %d' % ww)
 
             slice_idx = np.where(self._states == ww)
-            zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
+            self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
-            sub_arrays = Parallel(n_jobs=cores, prefer="threads")(delayed(self._gpr_fit_line)  # function name
-                                                (self._image.img[xx, yy, slice_idx].flatten().reshape(-1, 1),  # input args
-                                                 zs.reshape(-1, 1), self._zq.reshape(-1, 1), gp)
+            sub_arrays = Parallel(n_jobs=cores)(delayed(self._gpr_fit_line)  # function name
+                                                (self._get_training_y(xx, yy, slice_idx, # input args
+                                                                      kernel_3d=kernel_3d, length_scale=length_scale),
+                                                 self._get_training_x(xx, yy, slice_idx,
+                                                                      kernel_3d=kernel_3d, length_scale=length_scale),
+                                                 self._get_zq(xx, yy,
+                                                              kernel_3d=kernel_3d, length_scale=length_scale),
+                                                 gp)
                                                 for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop def
 
             # insert interpolated data into pre-allocated volume
@@ -162,12 +173,64 @@ class ResampleData(object):
         # print function duration info
         print('%s duration: %.1fs [%d threads]' % ('_interp_gpr', (time.time() - t1), cores))
 
-    @staticmethod
-    def _gpr_fit_line(y, zs, zq, gp):
-        """Parallelisable function to fit GPR model to one line of z data"""
-        gp.fit(zs, y)
-        y_gpr = gp.predict(zq)
-        return y_gpr
+    def _get_training_y(self, x, y, slice_idx, kernel_3d=False, length_scale=2):
+        """Gets array of training point values"""
+        if kernel_3d and length_scale > 1:
+            training_x = self._get_pixels_xy(x, y, slice_idx, length_scale=length_scale)
+            training_y = self._image.img[training_x[0, :], training_x[1, :], training_x[2, :]].transpose()
+        else:  # standard 1D GPR
+            training_y = self._image.img[x, y, slice_idx].flatten().reshape(-1, 1)
 
-    def _smooth_gaussian(self):
-        pass
+        return training_y
+
+    def _get_training_x(self, x, y, slice_idx, kernel_3d=False, length_scale=2):
+        """Gets array of training point co-ordinates"""
+        if kernel_3d and length_scale > 1:
+            training_x = self._get_pixels_xy(x, y, slice_idx, length_scale=length_scale).transpose()
+
+            training_x = training_x.astype(float)
+            training_x[:, 0] = training_x[:, 0] * self._image.nii.header['pixdim'][1]
+            training_x[:, 1] = training_x[:, 1] * self._image.nii.header['pixdim'][2]
+            training_x[:, 2] = training_x[:, 2] * self._image.nii.header['pixdim'][3]
+        else:
+            training_x = self._zs.reshape(-1, 1)
+
+        return training_x
+
+    def _get_zq(self, x, y, kernel_3d=False, length_scale=2):
+        """returns the relative query points"""
+        if kernel_3d and length_scale > 1:
+            X, Y, Z = np.meshgrid(x, y, self._zq)
+            zq = np.vstack([X.ravel() * self._image.nii.header['pixdim'][1],
+                            Y.ravel() * self._image.nii.header['pixdim'][2],
+                            Z.ravel()]).transpose()
+        else:
+            zq = self._zq.reshape(-1, 1)
+        return zq
+
+    def _get_pixels_xy(self, x, y, slice_idx, length_scale=2):
+        """Gets valid xy pixel indices"""
+
+        dxy = np.floor(length_scale/2).astype(int)  # range of returned values
+
+        # define x and y ranges inside image range
+        x_min = max(x - dxy, 0)
+        x_max = min(x + dxy + 1, self._image.img.shape[0])
+        y_min = max(y - dxy, 0)
+        y_max = min(y + dxy + 1, self._image.img.shape[1])
+
+        # define pixel indices
+        x_locs = np.arange(x_min, x_max)
+        y_locs = np.arange(y_min, y_max)
+        z_locs = np.array(slice_idx)
+
+        X, Y, Z = np.meshgrid(x_locs, y_locs, z_locs)
+
+        return np.vstack([X.ravel(), Y.ravel(), Z.ravel()])
+
+    @ staticmethod
+    def _gpr_fit_line(y, X, zq, gp):
+        """Simple parallel function to fit GPR model to one line of z data"""
+        gp.fit(X, y)
+        y_pred = gp.predict(zq)
+        return y_pred

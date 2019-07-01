@@ -38,6 +38,7 @@ def app_estimate_respiration(pipeline=False):
         input_vars.add_flag_disable_resp_crop(required=False)
         input_vars.add_n_resp_states(required=False)
         input_vars.add_interpolator(required=False)
+        input_vars.add_kernel_dims(required=False)
 
         # parse
         args = input_vars.parse_args()
@@ -63,6 +64,7 @@ def app_estimate_respiration(pipeline=False):
                                write_paths,
                                method='body_area',  # currently only body_area but space for other methods,
                                disable_crop_data=args.disable_crop,
+                               kernel_dims=args.kernel_dims
                                )
     resp.run()
 

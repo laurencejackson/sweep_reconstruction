@@ -60,7 +60,7 @@ class ImageData(object):
         # set reshaped data
         self.set_data(img_reshape)
 
-    def write_nii(self, path, mod):
+    def write_nii(self, path):
         """
         Saves NIfTI image in working directory
         :param path: path to save NIfTI file to
