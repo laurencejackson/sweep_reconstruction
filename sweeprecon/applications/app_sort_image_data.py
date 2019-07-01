@@ -47,7 +47,7 @@ def app_sort_image_data(pipeline=False):
         args = logger.log.args
 
     # initialise write paths
-    write_paths = WritePaths(os.path.basename(args.input))
+    write_paths = WritePaths(args)
 
     # logging
     logger = LogData()

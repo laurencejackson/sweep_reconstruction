@@ -4,6 +4,7 @@ Input parser for command line operation
 Laurence Jackson, BME, KCL 2019
 """
 
+import os
 import nibabel as nib
 import numpy as np
 
@@ -59,7 +60,7 @@ class ImageData(object):
         # set reshaped data
         self.set_data(img_reshape)
 
-    def write_nii(self, path):
+    def write_nii(self, path, mod):
         """
         Saves NIfTI image in working directory
         :param path: path to save NIfTI file to

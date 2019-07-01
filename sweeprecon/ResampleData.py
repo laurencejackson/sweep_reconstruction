@@ -29,8 +29,8 @@ class ResampleData(object):
         :param states: vector mapping each slice of image to a respiration state
         :param slice_locations: vector mapping each slice to a spatial position relative to origin
         :param write_paths: WritePaths object containing paths to write output
-        :param resolution: resolution of output - defualts to 'isotropic' but also takes a float [mm]
         :param interp_method: method for interpolation, 'fast_linear' or 'gpr' (slower and smoother)
+        :param resolution: resolution of output - defaults to 'isotropic' but also takes a float [mm]
         """
 
         self._image = image
@@ -63,7 +63,7 @@ class ResampleData(object):
 
     def _write_resampled_data(self):
         """Saves re-sampled image"""
-        # TODO: can only correct for interpolation in z at the moment this is all i need for now but update for xy soon
+        # TODO: can only correct for interpolation in z at the moment
         self._image_4d.nii.affine[:, 2] = self._image.nii.affine[:, 2] * (self._dxyz[2] / self._image.nii.header['pixdim'][3])
 
         self._image_4d.set_data(self._img_4d)
@@ -113,8 +113,8 @@ class ResampleData(object):
         self._xi = np.int_(np.linspace(0, self._image.nii.header['dim'][1] - 1, self._image.nii.header['dim'][1]))
         self._yi = np.int_(np.linspace(0, self._image.nii.header['dim'][2] - 1, self._image.nii.header['dim'][2]))
 
-        print('Interpolating z dimension')
         for ww in range(1, self._nstates + 1):
+            print('Interpolating resp window: %d' % ww)
 
             slice_idx = np.where(self._states == ww)
             zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
@@ -147,11 +147,12 @@ class ResampleData(object):
             slice_idx = np.where(self._states == ww)
             zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
-            sub_arrays = Parallel(n_jobs=cores)(delayed(self._gpr_fit_line)  # function name
+            sub_arrays = Parallel(n_jobs=cores, prefer="threads")(delayed(self._gpr_fit_line)  # function name
                                                 (self._image.img[xx, yy, slice_idx].flatten().reshape(-1, 1),  # input args
                                                  zs.reshape(-1, 1), self._zq.reshape(-1, 1), gp)
                                                 for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop def
 
+            # insert interpolated data into pre-allocated volume
             index = 0
             for xx in np.nditer(self._xi):
                 for yy in np.nditer(self._yi):
@@ -163,6 +164,10 @@ class ResampleData(object):
 
     @staticmethod
     def _gpr_fit_line(y, zs, zq, gp):
+        """Parallelisable function to fit GPR model to one line of z data"""
         gp.fit(zs, y)
         y_gpr = gp.predict(zq)
         return y_gpr
+
+    def _smooth_gaussian(self):
+        pass

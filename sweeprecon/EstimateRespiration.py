@@ -273,7 +273,7 @@ class EstimateRespiration(object):
             cores = max(1, cpu_count() - 1)
 
         # run function with input vols
-        sub_arrays = Parallel(n_jobs=cores)(  # Use n cores
+        sub_arrays = Parallel(n_jobs=cores, prefer="threads")(  # Use n cores
             delayed(function_name)([vols[v][:, :, zz] for v in range(0, vols.__len__())])  # Apply function_name
             for zz in range(0, vols[0].shape[2]))  # For each 3rd dimension
 

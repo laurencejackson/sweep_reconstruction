@@ -39,7 +39,7 @@ def app_resample_data(pipeline=False):
 
         # parse
         args = input_vars.parse_args()
-        write_paths = WritePaths(os.path.basename(args.input))
+        write_paths = WritePaths(args)
         image = ImageData(args.input)
 
         # save args to logger
@@ -50,7 +50,7 @@ def app_resample_data(pipeline=False):
         # load LogData
         logger.load_log_file()
         args = logger.log.args
-        write_paths = WritePaths(os.path.basename(args.input))
+        write_paths = WritePaths(args)
         image = ImageData(write_paths.path_sorted)
 
     if not logger.log.flag_estimated_respiration or not logger.log.flag_sorted:
