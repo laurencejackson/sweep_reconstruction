@@ -258,7 +258,7 @@ class EstimateRespiration(object):
         Runs a defined function over the slice direction on parallel threads
         :param function_name: function to be performed (must operate on a 2D image)
         :param *vols: image volumes (3D) to pass to function - must be same size
-        :param cores: number of cores to run on [default: 4]
+        :param cores: number of cores to run on [default: 1 or max - 1]
         :return:
         """
 
@@ -273,7 +273,7 @@ class EstimateRespiration(object):
             cores = max(1, cpu_count() - 1)
 
         # run function with input vols
-        sub_arrays = Parallel(n_jobs=cores, prefer="threads")(  # Use n cores
+        sub_arrays = Parallel(n_jobs=cores)(  # Use n cores
             delayed(function_name)([vols[v][:, :, zz] for v in range(0, vols.__len__())])  # Apply function_name
             for zz in range(0, vols[0].shape[2]))  # For each 3rd dimension
 

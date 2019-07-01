@@ -5,7 +5,6 @@ Resamples sorted and classified data into 3D/4D respiration resolved volumes
 Laurence Jackson, BME, KCL, 2019
 """
 
-import os
 import sys
 
 from sweeprecon.ResampleData import ResampleData

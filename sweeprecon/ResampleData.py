@@ -132,7 +132,7 @@ class ResampleData(object):
         self._xi = np.int_(np.linspace(0, self._image.nii.header['dim'][1] - 1, self._image.nii.header['dim'][1]))
         self._yi = np.int_(np.linspace(0, self._image.nii.header['dim'][2] - 1, self._image.nii.header['dim'][2]))
 
-        # Instantiate a Gaussian Process model
+        # Instantiate a Gaussian Process kernel
         kernel = 1.0 * RBF(length_scale=12, length_scale_bounds=(5, 25)) \
                  + WhiteKernel(noise_level=20, noise_level_bounds=(5, 50))
 
@@ -232,6 +232,4 @@ class ResampleData(object):
     def _gpr_fit_line(y, X, zq, gp):
         """Simple parallel function to fit GPR model to one line of z data"""
         gp.fit(X, y)
-        y_pred = gp.predict(zq)
-        print('.')
-        return y_pred
+        return gp.predict(zq)
