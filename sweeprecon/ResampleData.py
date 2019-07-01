@@ -138,7 +138,7 @@ class ResampleData(object):
 
         gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=0, normalize_y=True)
 
-        cores = max(1, cpu_count()-1)
+        cores = max(1, cpu_count())
         length_scale = 3
 
         if self._kernel_dims > 1:
@@ -233,4 +233,5 @@ class ResampleData(object):
         """Simple parallel function to fit GPR model to one line of z data"""
         gp.fit(X, y)
         y_pred = gp.predict(zq)
+        print('.')
         return y_pred
