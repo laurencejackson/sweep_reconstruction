@@ -85,7 +85,7 @@ class ArgParser(object):
                           ):
         self._add_argument(dict(locals()))
 
-    def add_interpolater(self,
+    def add_interpolator(self,
                          option_string=("-x", "--interpolater"),
                          metavar='',
                          help="choose interpolater to use [options: 'fast_linear' or 'gpr']",

@@ -37,7 +37,7 @@ def app_estimate_respiration(pipeline=False):
         input_vars.add_flag_redo(required=False)
         input_vars.add_flag_disable_resp_crop(required=False)
         input_vars.add_n_resp_states(required=False)
-        input_vars.add_interpolater(required=False)
+        input_vars.add_interpolator(required=False)
 
         # parse
         args = input_vars.parse_args()

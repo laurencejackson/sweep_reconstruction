@@ -35,7 +35,7 @@ def app_resample_data(pipeline=False):
 
         # optional
         input_vars.add_flag_redo(required=False)
-        input_vars.add_interpolater(required=False)
+        input_vars.add_interpolator(required=False)
 
         # parse
         args = input_vars.parse_args()
