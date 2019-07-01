@@ -154,7 +154,7 @@ class ResampleData(object):
         t1 = time.time()
 
         for ww in range(1, self._nstates + 1):
-            print('Interpolating resp window: %d' % ww)
+            print('Interpolating resp window: %d [%d threads]' % (ww, cores))
 
             slice_idx = np.where(self._states == ww)
             self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
