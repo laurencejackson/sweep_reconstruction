@@ -53,7 +53,7 @@ class ResampleData(object):
         print('Re-sampling method: %s' % self._interp_method)
         if self._interp_method == 'fast_linear':
             self._interp_fast_linear()
-        if self._interp_method == 'gpr':
+        elif self._interp_method == 'gpr':
             self._interp_gpr()
         else:
             raise Exception('\nInvalid data re-sampling method: %s\n' % self._interp_method)
