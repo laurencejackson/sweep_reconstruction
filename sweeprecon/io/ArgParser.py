@@ -120,5 +120,3 @@ class ArgParser(object):
                                    default=False,
                                    ):
         self._add_argument(dict(locals()))
-
-        kernel_dims
