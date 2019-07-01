@@ -20,8 +20,8 @@ class ResampleData(object):
                  states,
                  slice_locations,
                  write_paths,
-                 resolution='isotropic',
-                 interp_method='fast_linear'
+                 interp_method,
+                 resolution='isotropic'
                  ):
         """
         initilises ResampleData
