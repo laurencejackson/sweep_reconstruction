@@ -258,7 +258,7 @@ class EstimateRespiration(object):
         Runs a defined function over the slice direction on parallel threads
         :param function_name: function to be performed (must operate on a 2D image)
         :param *vols: image volumes (3D) to pass to function - must be same size
-        :param cores: number of cores to run on [default: 4]
+        :param cores: number of cores to run on [default: 1 or max - 1]
         :return:
         """
 
