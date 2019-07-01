@@ -9,9 +9,9 @@ import os
 
 class WritePaths(object):
 
-    def __init__(self, basename):
+    def __init__(self, args):
 
-        self.basename = basename
+        self.basename = os.path.basename(args.input)
         self._nii_ext = '.nii.gz'
 
         self.path_sorted = \
@@ -50,6 +50,8 @@ class WritePaths(object):
 
         self.path_interpolated_4d = \
             os.path.join(os.getcwd(),  # cwd
-                         'IMG_4D_interpolated_' +  # prefix
-                         basename  # basename
+                         'IMG_4D_interpolated_' +
+                         args.interpolator + '_' +
+                         str(args.kernel_dims) + 'D_kernel_' +
+                         self.basename
                          )

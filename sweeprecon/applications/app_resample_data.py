@@ -35,11 +35,12 @@ def app_resample_data(pipeline=False):
 
         # optional
         input_vars.add_flag_redo(required=False)
-        input_vars.add_interpolater(required=False)
+        input_vars.add_interpolator(required=False)
+        input_vars.add_kernel_dims(required=False)
 
         # parse
         args = input_vars.parse_args()
-        write_paths = WritePaths(os.path.basename(args.input))
+        write_paths = WritePaths(args)
         image = ImageData(args.input)
 
         # save args to logger
@@ -50,7 +51,7 @@ def app_resample_data(pipeline=False):
         # load LogData
         logger.load_log_file()
         args = logger.log.args
-        write_paths = WritePaths(os.path.basename(args.input))
+        write_paths = WritePaths(args)
         image = ImageData(write_paths.path_sorted)
 
     if not logger.log.flag_estimated_respiration or not logger.log.flag_sorted:
@@ -62,7 +63,7 @@ def app_resample_data(pipeline=False):
                              logger.log.resp_states,
                              logger.log.geo_slice_locations,
                              write_paths,
-                             args.interpolater
+                             args.interpolator
                              )
 
     # run re-sampling

@@ -34,9 +34,12 @@ def app_sort_image_data(pipeline=False):
 
         # optional
         input_vars.add_flag_redo(required=False)
+        input_vars.add_interpolator(required=False)
+        input_vars.add_kernel_dims(required=False)
 
         # parse
         args = input_vars.parse_args()
+
         # save args to logger
         logger.set_key('args', args)
 
@@ -47,7 +50,7 @@ def app_sort_image_data(pipeline=False):
         args = logger.log.args
 
     # initialise write paths
-    write_paths = WritePaths(os.path.basename(args.input))
+    write_paths = WritePaths(args)
 
     # logging
     logger = LogData()

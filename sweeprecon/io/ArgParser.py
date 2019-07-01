@@ -85,12 +85,21 @@ class ArgParser(object):
                           ):
         self._add_argument(dict(locals()))
 
-    def add_interpolater(self,
-                         option_string=("-x", "--interpolater"),
+    def add_interpolator(self,
+                         option_string=("-x", "--interpolator"),
                          metavar='',
                          help="choose interpolater to use [options: 'fast_linear' or 'gpr']",
                          required=False,
                          default='fast_linear'
+                         ):
+        self._add_argument(dict(locals()))
+
+    def add_kernel_dims(self,
+                         option_string=("-k", "--kernel_dims"),
+                         metavar='',
+                         help="number of dimensions in gpr interpolation kernel [options: 1, 3]",
+                         required=False,
+                         default=1
                          ):
         self._add_argument(dict(locals()))
 
@@ -111,3 +120,5 @@ class ArgParser(object):
                                    default=False,
                                    ):
         self._add_argument(dict(locals()))
+
+        kernel_dims

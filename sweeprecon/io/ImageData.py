@@ -4,6 +4,7 @@ Input parser for command line operation
 Laurence Jackson, BME, KCL 2019
 """
 
+import os
 import nibabel as nib
 import numpy as np
 
