@@ -56,7 +56,7 @@ class ResampleData(object):
         if self._interp_method == 'gpr':
             self._interp_gpr()
         else:
-            raise Exception('\nInvalid data re-sampling method\n')
+            raise Exception('\nInvalid data re-sampling method: %s\n' % self._interp_method)
 
         # write output
         self._write_resampled_data()

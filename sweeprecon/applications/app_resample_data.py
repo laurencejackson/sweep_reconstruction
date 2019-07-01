@@ -62,7 +62,7 @@ def app_resample_data(pipeline=False):
                              logger.log.resp_states,
                              logger.log.geo_slice_locations,
                              write_paths,
-                             interp_method=args.interpolater
+                             args.interpolater
                              )
 
     # run re-sampling
