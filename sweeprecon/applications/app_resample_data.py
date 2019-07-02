@@ -52,7 +52,7 @@ def app_resample_data(pipeline=False):
         logger.load_log_file()
         args = logger.log.args
         write_paths = WritePaths(args)
-        image = ImageData(write_paths.path_sorted)
+        image = ImageData(write_paths.path_sorted())
 
     if not logger.log.flag_estimated_respiration or not logger.log.flag_sorted:
         print('Missing requirements: please run full pipeline through __main__')

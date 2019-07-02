@@ -116,7 +116,7 @@ class EstimateRespiration(object):
         self._image_refined.square_crop(rect=rect)
 
         # write output
-        self._image.write_nii(self._write_paths.path_cropped)
+        self._image.write_nii(self._write_paths.path_cropped())
 
     def _initialise_boundaries(self):
         """Initialises body area boundaries"""
@@ -141,7 +141,7 @@ class EstimateRespiration(object):
 
         # write initialised contour data to new image
         self._image_initialised.set_data(ac_mask)
-        self._image_initialised.write_nii(self._write_paths.path_initialised_contours)
+        self._image_initialised.write_nii(self._write_paths.path_initialised_contours())
 
     def _refine_boundaries(self):
         """Refines body area estimates using Chan-Vese active contour model"""
@@ -157,7 +157,7 @@ class EstimateRespiration(object):
 
         # save filtered image
         self._image_refined.set_data(filtered_image)
-        self._image_refined.write_nii(self._write_paths.path_filtered_contours)
+        self._image_refined.write_nii(self._write_paths.path_filtered_contours())
 
         # refine segmentation
         refined_contours = self._process_slices_parallel(self._segment_gac,
@@ -167,7 +167,7 @@ class EstimateRespiration(object):
 
         # save filtered image
         self._image_refined.set_data(filtered_image)
-        self._image_refined.write_nii(self._write_paths.path_filtered_contours)
+        self._image_refined.write_nii(self._write_paths.path_filtered_contours())
 
         # invert mask
         refined_contours = (refined_contours == 0) * 1
@@ -180,7 +180,7 @@ class EstimateRespiration(object):
         self._image_refined.square_crop(rect=rect)
 
         # write contour data to file
-        self._image_refined.write_nii(self._write_paths.path_refined_contours)
+        self._image_refined.write_nii(self._write_paths.path_refined_contours())
 
     def _sum_mask_data(self):
         """Sums pixels in refined mask"""
@@ -292,7 +292,7 @@ class EstimateRespiration(object):
             for zz in range(0, vols[0].shape[2]))  # For each 3rd dimension
 
         # print function duration info
-        print('%s duration: %.1fs [%d threads]' % (function_name.__name__, (time.time() - t1), cores))
+        print('%s duration: %.1fs [%d processes]' % (function_name.__name__, (time.time() - t1), cores))
 
         # return recombined array
         return np.stack(sub_arrays, axis=2)

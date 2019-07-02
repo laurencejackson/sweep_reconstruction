@@ -4,6 +4,7 @@ Class containing data and functions for re-sampling 3D data into respiration res
 Laurence Jackson, BME, KCL 2019
 """
 
+import sys
 import copy
 import time
 import numpy as np
@@ -37,6 +38,7 @@ class ResampleData(object):
 
         self._image = image
         self._image_4d = copy.deepcopy(image)
+        self._image_resp_3d = copy.deepcopy(image)
         self._states = states
         self._slice_locations = slice_locations
         self._write_paths = write_paths
@@ -57,21 +59,18 @@ class ResampleData(object):
         print('Re-sampling method: %s' % self._interp_method)
         if self._interp_method == 'fast_linear':
             self._interp_fast_linear()
+
         elif self._interp_method == 'gpr':
             self._interp_gpr()
+
         else:
             raise Exception('\nInvalid data re-sampling method: %s\n' % self._interp_method)
 
-        # write output
-        self._write_resampled_data()
-
-    def _write_resampled_data(self):
+    def _write_resampled_data(self, image_obj, path):
         """Saves re-sampled image"""
         # TODO: can only correct for interpolation in z at the moment
-        self._image_4d.nii.affine[:, 2] = self._image.nii.affine[:, 2] * (self._dxyz[2] / self._image.nii.header['pixdim'][3])
-
-        self._image_4d.set_data(self._img_4d)
-        self._image_4d.write_nii(self._write_paths.path_interpolated_4d)
+        image_obj.nii.affine[:, 2] = self._image.nii.affine[:, 2] * (self._dxyz[2] / self._image.nii.header['pixdim'][3])
+        image_obj.write_nii(path)
 
     def _init_vols(self):
         """pre-allocates memory for interpolated volumes"""
@@ -128,6 +127,10 @@ class ResampleData(object):
                     z_interp = np.interp(self._zq, zs, self._image.img[xx, yy, slice_idx].flatten())
                     self._img_4d[xx, yy, :, ww - 1] = z_interp.flatten()
 
+        # write to file
+        self._image_4d.set_data(self._img_4d)
+        self._write_resampled_data(self._image_4d, self._write_paths.path_interpolated_4d_linear())
+
     def _interp_gpr(self, kernel_3d=False):
         """Interpolates according to a gaussian regression model"""
         # define indexed points
@@ -135,17 +138,19 @@ class ResampleData(object):
         self._yi = np.int_(np.linspace(0, self._image.nii.header['dim'][2] - 1, self._image.nii.header['dim'][2]))
 
         # Instantiate a Gaussian Process kernel
-        kernel = 1.0 * RBF(length_scale=12, length_scale_bounds=(5, 25)) \
+        kernel = 1.0 * RBF(length_scale=8, length_scale_bounds=(5, 20)) \
                  + WhiteKernel(noise_level=20, noise_level_bounds=(5, 50))
 
         gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=0, normalize_y=True)
 
+        # GPR functions already optimised to exploit parallel threads
+        #  - parallelising this function might adversely increase overheads
         if self._n_threads is 0:
             cores = max(1, cpu_count()-1)
         else:
             cores = self._n_threads
 
-        length_scale = 3
+        length_scale = 2
 
         if self._kernel_dims > 1:
             kernel_3d = True
@@ -154,27 +159,30 @@ class ResampleData(object):
         t1 = time.time()
 
         for ww in range(1, self._nstates + 1):
-            print('Interpolating resp window: %d [%d threads]' % (ww, cores))
-
+            print('Interpolating resp window: %d [%d processes]' % (ww, cores))
             slice_idx = np.where(self._states == ww)
             self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
             sub_arrays = Parallel(n_jobs=cores)(delayed(self._gpr_fit_line)  # function name
-                                                (self._get_training_y(xx, yy, slice_idx, # input args
-                                                                      kernel_3d=kernel_3d, length_scale=length_scale),
-                                                 self._get_training_x(xx, yy, slice_idx,
-                                                                      kernel_3d=kernel_3d, length_scale=length_scale),
-                                                 self._get_zq(xx, yy,
-                                                              kernel_3d=kernel_3d, length_scale=length_scale),
-                                                 gp)
+                                               (gp, xx, yy, slice_idx, kernel_3d, length_scale)
                                                 for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop def
 
             # insert interpolated data into pre-allocated volume
+            print('\ncollecting data')
             index = 0
             for xx in np.nditer(self._xi):
                 for yy in np.nditer(self._yi):
                     self._img_4d[xx, yy, :, ww-1] = sub_arrays[index].flatten()
                     index = index + 1
+
+            # save single resp state volumes
+            self._image_resp_3d.set_data(self._img_4d[:, :, :, ww - 1])
+            self._write_resampled_data(self._image_resp_3d, self._write_paths.path_interpolated_3d(ww))
+            print('---')
+
+        # write full 4D interp volume
+        self._image_4d.set_data(self._img_4d)
+        self._write_resampled_data(self._image_resp_3d, self.path_interpolated_4d())
 
         # print function duration info
         print('%s duration: %.1fs [%d threads]' % ('_interp_gpr', (time.time() - t1), cores))
@@ -234,8 +242,22 @@ class ResampleData(object):
 
         return np.vstack([X.ravel(), Y.ravel(), Z.ravel()])
 
-    @ staticmethod
-    def _gpr_fit_line(y, X, zq, gp):
+    def _gpr_fit_line(self, gp, xx, yy, slice_idx, kernel_3d, length_scale):
         """Simple parallel function to fit GPR model to one line of z data"""
+
+        y = self._get_training_y(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale)
+        X = self._get_training_x(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale)
+        zq = self._get_zq(xx, yy, kernel_3d=kernel_3d, length_scale=length_scale)
+
+        # fit GPR model
         gp.fit(X, y)
-        return gp.predict(zq)
+        z_pred = gp.predict(zq)
+
+        # print progress update
+        percentage_complete = ((((xx - np.min(self._xi)) * self._xi.shape[0]) + (yy - np.min(self._yi))) /
+                               (self._xi.shape[0] * self._yi.shape[0])) * 100
+
+        progress_string = 'Progress:\t' + '{:05.2f}'.format(percentage_complete) + '%'
+        sys.stdout.write('\r' + progress_string)
+
+        return z_pred
