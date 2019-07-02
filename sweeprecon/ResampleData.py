@@ -166,24 +166,24 @@ class ResampleData(object):
             slice_idx = np.where(self._states == ww)
             self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
-            #sub_arrays = Parallel(n_jobs=cores)(delayed(self._gpr_fit_line)  # function name
-            #                                   (gp, xx, yy, slice_idx, kernel_3d, length_scale)
-            #                                    for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop def
-            for xx in np.nditer(self._xi):
-                for yy in np.nditer(self._yi):
-                    v = self._gpr_fit_line(gp, xx, yy, slice_idx, kernel_3d, length_scale)
-                    self._img_4d[xx, yy, :, ww - 1] = v.flatten()
-
-            # insert interpolated data into pre-allocated volume
-            #print('\n\tcollecting data')
-            #index = 0
+            sub_arrays = Parallel(n_jobs=cores)(delayed(self._gpr_fit_line)  # function name
+                                               (gp, xx, yy, slice_idx, kernel_3d, length_scale)
+                                                for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop def
             #for xx in np.nditer(self._xi):
             #    for yy in np.nditer(self._yi):
-            #        self._img_4d[xx, yy, :, ww-1] = sub_arrays[index].flatten()
-            #        index = index + 1
+            #        v = self._gpr_fit_line(gp, xx, yy, slice_idx, kernel_3d, length_scale)
+            #        self._img_4d[xx, yy, :, ww - 1] = v.flatten()
+
+            # insert interpolated data into pre-allocated volume
+            print('\n\tcollecting data')
+            index = 0
+            for xx in np.nditer(self._xi):
+                for yy in np.nditer(self._yi):
+                    self._img_4d[xx, yy, :, ww-1] = sub_arrays[index].flatten()
+                    index = index + 1
 
             # save single resp state volume
-            self._image_resp_3d.set_data(self._img_4d[xx, yy, :, ww-1])
+            self._image_resp_3d.set_data(self._img_4d[:, :, :, ww-1])
             self._image_resp_3d.write_nii(self._write_paths.path_interpolated_3d(ww))
 
         # print function duration info
