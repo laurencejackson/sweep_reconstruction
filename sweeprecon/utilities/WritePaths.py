@@ -67,6 +67,13 @@ class WritePaths(object):
                             self.basename
                             )
 
+    def path_interpolated_4d_linear(self):
+        return os.path.join(os.getcwd(),  # cwd
+                            'IMG_4D_linear_' +
+                            self._args.interpolator + '_' +
+                            self.basename
+                            )
+
     def path_interpolated_3d(self, resp_state):
         return os.path.join(os.getcwd(),  # cwd
                      self._resp_vols_folder,

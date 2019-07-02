@@ -59,21 +59,18 @@ class ResampleData(object):
         print('Re-sampling method: %s' % self._interp_method)
         if self._interp_method == 'fast_linear':
             self._interp_fast_linear()
+
         elif self._interp_method == 'gpr':
             self._interp_gpr()
+
         else:
             raise Exception('\nInvalid data re-sampling method: %s\n' % self._interp_method)
 
-        # write output
-        self._write_resampled_data()
-
-    def _write_resampled_data(self):
+    def _write_resampled_data(self, image_obj, path):
         """Saves re-sampled image"""
         # TODO: can only correct for interpolation in z at the moment
-        self._image_4d.nii.affine[:, 2] = self._image.nii.affine[:, 2] * (self._dxyz[2] / self._image.nii.header['pixdim'][3])
-
-        self._image_4d.set_data(self._img_4d)
-        self._image_4d.write_nii(self._write_paths.path_interpolated_4d())
+        image_obj.nii.affine[:, 2] = self._image.nii.affine[:, 2] * (self._dxyz[2] / self._image.nii.header['pixdim'][3])
+        image_obj.write_nii(path)
 
     def _init_vols(self):
         """pre-allocates memory for interpolated volumes"""
@@ -130,6 +127,10 @@ class ResampleData(object):
                     z_interp = np.interp(self._zq, zs, self._image.img[xx, yy, slice_idx].flatten())
                     self._img_4d[xx, yy, :, ww - 1] = z_interp.flatten()
 
+        # write to file
+        self._image_4d.set_data(self._img_4d)
+        self._write_resampled_data(self._image_4d, self._write_paths.path_interpolated_4d_linear())
+
     def _interp_gpr(self, kernel_3d=False):
         """Interpolates according to a gaussian regression model"""
         # define indexed points
@@ -158,8 +159,8 @@ class ResampleData(object):
         t1 = time.time()
 
         print('TEMP DEV: cropping interp region')
-        self._xi = self._xi[90:120]
-        self._yi = self._yi[90:120]
+        self._xi = self._xi[115:120]
+        self._yi = self._yi[115:120]
 
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d [%d processes]' % (ww, cores))
@@ -169,22 +170,24 @@ class ResampleData(object):
             sub_arrays = Parallel(n_jobs=cores)(delayed(self._gpr_fit_line)  # function name
                                                (gp, xx, yy, slice_idx, kernel_3d, length_scale)
                                                 for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop def
-            #for xx in np.nditer(self._xi):
-            #    for yy in np.nditer(self._yi):
-            #        v = self._gpr_fit_line(gp, xx, yy, slice_idx, kernel_3d, length_scale)
-            #        self._img_4d[xx, yy, :, ww - 1] = v.flatten()
 
             # insert interpolated data into pre-allocated volume
-            print('\n\tcollecting data')
+            print('\ncollecting data')
             index = 0
             for xx in np.nditer(self._xi):
                 for yy in np.nditer(self._yi):
                     self._img_4d[xx, yy, :, ww-1] = sub_arrays[index].flatten()
                     index = index + 1
 
+            # for xx in np.nditer(self._xi):
+            #     for yy in np.nditer(self._yi):
+            #         v = self._gpr_fit_line(gp, xx, yy, slice_idx, kernel_3d, length_scale)
+            #         self._img_4d[xx, yy, :, ww - 1] = v.flatten()
+
             # save single resp state volume
-            self._image_resp_3d.set_data(self._img_4d[:, :, :, ww-1])
-            self._image_resp_3d.write_nii(self._write_paths.path_interpolated_3d(ww))
+            self._image_resp_3d.set_data(self._img_4d[:, :, :, ww - 1])
+            self._write_resampled_data(self._image_resp_3d, self._write_paths.path_interpolated_3d(ww))
+            print('---')
 
         # print function duration info
         print('%s duration: %.1fs [%d threads]' % ('_interp_gpr', (time.time() - t1), cores))
