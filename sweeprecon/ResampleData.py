@@ -146,8 +146,7 @@ class ResampleData(object):
         # GPR functions already optimised to exploit parallel threads
         #  - parallelising this function might adversely increase overheads
         if self._n_threads is 0:
-            # cores = 1 max(1, cpu_count()-1)
-            cores = 1
+            cores = max(1, cpu_count()-1)
         else:
             cores = self._n_threads
 
@@ -158,10 +157,6 @@ class ResampleData(object):
 
         # start timer
         t1 = time.time()
-
-        print('TEMP DEV: cropping interp region')
-        self._xi = self._xi[90:120]
-        self._yi = self._yi[90:120]
 
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d [%d processes]' % (ww, cores))
@@ -180,15 +175,14 @@ class ResampleData(object):
                     self._img_4d[xx, yy, :, ww-1] = sub_arrays[index].flatten()
                     index = index + 1
 
-            # for xx in np.nditer(self._xi):
-            #     for yy in np.nditer(self._yi):
-            #         v = self._gpr_fit_line(gp, xx, yy, slice_idx, kernel_3d, length_scale)
-            #         self._img_4d[xx, yy, :, ww - 1] = v.flatten()
-
-            # save single resp state volume
+            # save single resp state volumes
             self._image_resp_3d.set_data(self._img_4d[:, :, :, ww - 1])
             self._write_resampled_data(self._image_resp_3d, self._write_paths.path_interpolated_3d(ww))
             print('---')
+
+        # write full 4D interp volume
+        self._image_4d.set_data(self._img_4d)
+        self._write_resampled_data(self._image_resp_3d, self.path_interpolated_4d())
 
         # print function duration info
         print('%s duration: %.1fs [%d threads]' % ('_interp_gpr', (time.time() - t1), cores))
@@ -255,11 +249,14 @@ class ResampleData(object):
         X = self._get_training_x(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale)
         zq = self._get_zq(xx, yy, kernel_3d=kernel_3d, length_scale=length_scale)
 
+        # fit GPR model
         gp.fit(X, y)
         z_pred = gp.predict(zq)
 
         # print progress update
-        percentage_complete = ((((xx - np.min(self._xi)) * self._xi.shape[0]) + (yy - np.min(self._yi))) / (self._xi.shape[0] * self._yi.shape[0])) * 100
+        percentage_complete = ((((xx - np.min(self._xi)) * self._xi.shape[0]) + (yy - np.min(self._yi))) /
+                               (self._xi.shape[0] * self._yi.shape[0])) * 100
+
         progress_string = 'Progress:\t' + '{:05.2f}'.format(percentage_complete) + '%'
         sys.stdout.write('\r' + progress_string)
 
