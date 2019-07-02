@@ -182,7 +182,7 @@ class ResampleData(object):
 
         # write full 4D interp volume
         self._image_4d.set_data(self._img_4d)
-        self._write_resampled_data(self._image_resp_3d, self.path_interpolated_4d())
+        self._write_resampled_data(self._image_resp_3d, self._write_paths.path_interpolated_4d())
 
         # print function duration info
         print('%s duration: %.1fs [%d threads]' % ('_interp_gpr', (time.time() - t1), cores))
