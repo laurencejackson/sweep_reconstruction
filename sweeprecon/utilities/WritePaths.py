@@ -68,7 +68,7 @@ class WritePaths(object):
                             )
 
     def path_interpolated_3d(self, resp_state):
-        os.path.join(os.getcwd(),  # cwd
+        return os.path.join(os.getcwd(),  # cwd
                      self._resp_vols_folder,
                      'IMG_3D_resp_' +
                      str(resp_state) + '_' +

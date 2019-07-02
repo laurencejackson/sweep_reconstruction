@@ -144,12 +144,10 @@ class ResampleData(object):
 
         # GPR functions already optimised to exploit parallel threads
         #  - parallelising this function might adversely increase overheads
-        # if self._n_threads is 0:
-        #     cores = max(1, cpu_count()-1)
-        # else:
-        #     cores = self._n_threads
-        print('forcing 1 threads for GPR interp - parallelising this function may adversely increase overheads')
-        cores = 1
+        if self._n_threads is 0:
+            cores = max(1, cpu_count()-1)
+        else:
+            cores = self._n_threads
 
         length_scale = 2
 
@@ -160,8 +158,8 @@ class ResampleData(object):
         t1 = time.time()
 
         print('TEMP DEV: cropping interp region')
-        self._xi = self._xi[50:150]
-        self._yi = self._yi[50:150]
+        self._xi = self._xi[90:120]
+        self._yi = self._yi[90:120]
 
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d [%d threads]' % (ww, cores))
@@ -173,6 +171,7 @@ class ResampleData(object):
                                                 for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop def
 
             # insert interpolated data into pre-allocated volume
+            print('\n\tcollecting data')
             index = 0
             for xx in np.nditer(self._xi):
                 for yy in np.nditer(self._yi):
