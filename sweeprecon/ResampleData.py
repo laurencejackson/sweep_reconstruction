@@ -38,6 +38,7 @@ class ResampleData(object):
 
         self._image = image
         self._image_4d = copy.deepcopy(image)
+        self._image_resp_3d = copy.deepcopy(image)
         self._states = states
         self._slice_locations = slice_locations
         self._write_paths = write_paths
@@ -72,7 +73,7 @@ class ResampleData(object):
         self._image_4d.nii.affine[:, 2] = self._image.nii.affine[:, 2] * (self._dxyz[2] / self._image.nii.header['pixdim'][3])
 
         self._image_4d.set_data(self._img_4d)
-        self._image_4d.write_nii(self._write_paths.path_interpolated_4d)
+        self._image_4d.write_nii(self._write_paths.path_interpolated_4d())
 
     def _init_vols(self):
         """pre-allocates memory for interpolated volumes"""
@@ -141,10 +142,14 @@ class ResampleData(object):
 
         gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=0, normalize_y=True)
 
-        if self._n_threads is 0:
-            cores = max(1, cpu_count()-1)
-        else:
-            cores = self._n_threads
+        # GPR functions already optimised to exploit parallel threads
+        #  - parallelising this function might adversely increase overheads
+        # if self._n_threads is 0:
+        #     cores = max(1, cpu_count()-1)
+        # else:
+        #     cores = self._n_threads
+        print('forcing 1 threads for GPR interp - parallelising this function may adversely increase overheads')
+        cores = 1
 
         length_scale = 2
 
@@ -169,6 +174,10 @@ class ResampleData(object):
                 for yy in np.nditer(self._yi):
                     self._img_4d[xx, yy, :, ww-1] = sub_arrays[index].flatten()
                     index = index + 1
+
+            # save single resp state volume
+            self._image_resp_3d.set_data(self._img_4d[xx, yy, :, ww-1])
+            self._image_resp_3d.write_nii(self._write_paths.path_interpolated_3d(ww+1))
 
         # print function duration info
         print('%s duration: %.1fs [%d threads]' % ('_interp_gpr', (time.time() - t1), cores))

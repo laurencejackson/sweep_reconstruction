@@ -58,7 +58,7 @@ def app_sort_image_data(pipeline=False):
     logger.set_key('input_data_raw', args.input)
 
     # read image data if not already done and redo not flagged
-    if os.path.isfile(write_paths.path_sorted) and not args.redo:
+    if os.path.isfile(write_paths.path_sorted()) and not args.redo:
         print('Data already sorted.')
         return
 
@@ -68,10 +68,10 @@ def app_sort_image_data(pipeline=False):
     image.sort_4d_to_3d()
 
     # save output
-    image.write_nii(write_paths.path_sorted)
+    image.write_nii(write_paths.path_sorted())
 
     # record output
-    logger.set_key('input_data_sorted', write_paths.path_sorted)
+    logger.set_key('input_data_sorted', write_paths.path_sorted())
     logger.set_key('geo_slice_locations', image.slice_positions())
     logger.set_key('args', args)
 

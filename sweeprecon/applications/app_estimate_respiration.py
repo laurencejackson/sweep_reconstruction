@@ -55,7 +55,7 @@ def app_estimate_respiration(pipeline=False):
         logger.load_log_file()
         args = logger.log.args
         write_paths = WritePaths(args)
-        image = ImageData(write_paths.path_sorted)
+        image = ImageData(write_paths.path_sorted())
 
     # make sure input argument is 3D and check if already done or redo flagged
     # TODO
