@@ -163,17 +163,33 @@ class ResampleData(object):
             slice_idx = np.where(self._states == ww)
             self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
-            sub_arrays = Parallel(n_jobs=cores)(delayed(self._gpr_fit_line)  # function name
-                                               (gp, xx, yy, slice_idx, kernel_3d, length_scale)
-                                                for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop def
+            #sub_arrays = Parallel(n_jobs=cores)(delayed(self._gpr_fit_line)  # function name
+            #                                   (gp, xx, yy, slice_idx, kernel_3d, length_scale)
+            #                                    for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop def
 
-            # insert interpolated data into pre-allocated volume
-            print('\ncollecting data')
-            index = 0
+            ## insert interpolated data into pre-allocated volume
+            #print('\ncollecting data')
+            #index = 0
+            #for xx in np.nditer(self._xi):
+            #    for yy in np.nditer(self._yi):
+            #        self._img_4d[xx, yy, :, ww-1] = sub_arrays[index].flatten()
+            #        index = index + 1
+
             for xx in np.nditer(self._xi):
                 for yy in np.nditer(self._yi):
-                    self._img_4d[xx, yy, :, ww-1] = sub_arrays[index].flatten()
-                    index = index + 1
+                    y = self._get_training_y(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale)
+                    X = self._get_training_x(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale)
+                    zq = self._get_zq(xx, yy, kernel_3d=kernel_3d, length_scale=length_scale)
+                    # fit GPR model
+                    gp.fit(X, y)
+                    z_pred = gp.predict(zq)
+                    # print progress update
+                    percentage_complete = ((((xx - np.min(self._xi)) * self._xi.shape[0]) + (yy - np.min(self._yi))) /
+                                           (self._xi.shape[0] * self._yi.shape[0])) * 100
+                    progress_string = 'Progress:\t' + '{:05.2f}'.format(percentage_complete) + '%'
+                    sys.stdout.write('\r' + progress_string)
+
+                    self._img_4d[xx, yy, :, ww - 1] = z_pred.flatten()
 
             # save single resp state volumes
             self._image_resp_3d.set_data(self._img_4d[:, :, :, ww - 1])
