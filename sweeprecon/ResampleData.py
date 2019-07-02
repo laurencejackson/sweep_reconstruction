@@ -159,6 +159,10 @@ class ResampleData(object):
         # start timer
         t1 = time.time()
 
+        print('TEMP DEV: cropping interp region')
+        self._xi = self._xi[50:150]
+        self._yi = self._yi[50:150]
+
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d [%d threads]' % (ww, cores))
             slice_idx = np.where(self._states == ww)
