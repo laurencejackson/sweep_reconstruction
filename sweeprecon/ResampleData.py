@@ -4,6 +4,7 @@ Class containing data and functions for re-sampling 3D data into respiration res
 Laurence Jackson, BME, KCL 2019
 """
 
+import sys
 import copy
 import time
 import numpy as np
@@ -135,7 +136,7 @@ class ResampleData(object):
         self._yi = np.int_(np.linspace(0, self._image.nii.header['dim'][2] - 1, self._image.nii.header['dim'][2]))
 
         # Instantiate a Gaussian Process kernel
-        kernel = 1.0 * RBF(length_scale=12, length_scale_bounds=(5, 25)) \
+        kernel = 1.0 * RBF(length_scale=8, length_scale_bounds=(5, 20)) \
                  + WhiteKernel(noise_level=20, noise_level_bounds=(5, 50))
 
         gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=0, normalize_y=True)
@@ -145,7 +146,7 @@ class ResampleData(object):
         else:
             cores = self._n_threads
 
-        length_scale = 3
+        length_scale = 2
 
         if self._kernel_dims > 1:
             kernel_3d = True
@@ -155,18 +156,11 @@ class ResampleData(object):
 
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d [%d threads]' % (ww, cores))
-
             slice_idx = np.where(self._states == ww)
             self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
             sub_arrays = Parallel(n_jobs=cores)(delayed(self._gpr_fit_line)  # function name
-                                                (self._get_training_y(xx, yy, slice_idx, # input args
-                                                                      kernel_3d=kernel_3d, length_scale=length_scale),
-                                                 self._get_training_x(xx, yy, slice_idx,
-                                                                      kernel_3d=kernel_3d, length_scale=length_scale),
-                                                 self._get_zq(xx, yy,
-                                                              kernel_3d=kernel_3d, length_scale=length_scale),
-                                                 gp)
+                                                (gp, xx, yy, slice_idx, kernel_3d, length_scale)
                                                 for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop def
 
             # insert interpolated data into pre-allocated volume
@@ -234,8 +228,19 @@ class ResampleData(object):
 
         return np.vstack([X.ravel(), Y.ravel(), Z.ravel()])
 
-    @ staticmethod
-    def _gpr_fit_line(y, X, zq, gp):
+    def _gpr_fit_line(self, gp, xx, yy, slice_idx, kernel_3d, length_scale):
         """Simple parallel function to fit GPR model to one line of z data"""
+
+        y = self._get_training_y(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale)
+        X = self._get_training_x(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale)
+        zq = self._get_zq(xx, yy, kernel_3d=kernel_3d, length_scale=length_scale)
+
         gp.fit(X, y)
-        return gp.predict(zq)
+        z_pred = gp.predict(zq)
+
+        # print progress update
+        percentage_complete = ((((xx - np.min(self._xi)) * self._xi.shape[0]) + (yy - np.min(self._yi))) / (self._xi.shape[0] * self._yi.shape[0])) * 100
+        progress_string = 'Progress:\t' + '{:05.2f}'.format(percentage_complete) + '%'
+        sys.stdout.write('\r' + progress_string)
+
+        return z_pred
