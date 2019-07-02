@@ -292,7 +292,7 @@ class EstimateRespiration(object):
             for zz in range(0, vols[0].shape[2]))  # For each 3rd dimension
 
         # print function duration info
-        print('%s duration: %.1fs [%d threads]' % (function_name.__name__, (time.time() - t1), cores))
+        print('%s duration: %.1fs [%d processes]' % (function_name.__name__, (time.time() - t1), cores))
 
         # return recombined array
         return np.stack(sub_arrays, axis=2)
