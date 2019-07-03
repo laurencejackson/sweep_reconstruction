@@ -164,24 +164,21 @@ class ResampleData(object):
         # start timer
         t1 = time.time()
 
-        k1 = GPy.kern.RBF(input_dim=3, lengthscale=2.)
-        k1['.*lengthscale'].constrain_bounded(1., 4.)
-        k2 = GPy.kern.RBF(input_dim=3, lengthscale=30.)
+        k1 = GPy.kern.RBF(input_dim=3, lengthscale=3.)
+        k1['.*lengthscale'].constrain_bounded(2., 6.)
+        k2 = GPy.kern.RBF(input_dim=3, lengthscale=20.)
         self._kernel_gpy = k1 + k2
-
-        self._yi = self._yi[100:120]
-        self._xi = self._xi[100:120]
 
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d [%d processes]' % (ww, cores))
             slice_idx = np.where(self._states == ww)
             self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
-            self._initialise_kernel_space(4, slice_idx, cores, kernel_3d, length_scale)
+            #self._initialise_kernel_space(4, slice_idx, cores, kernel_3d, length_scale)
 
-            sub_arrays = Parallel(n_jobs=cores)(delayed(self._gpr_fit_line_GPy)  # function name
-                                               (xx, yy, slice_idx, kernel_3d, length_scale)
-                                                for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop def
+            sub_arrays = Parallel(n_jobs=cores)(delayed(self._gpr_fit_line)  # function name
+                                                (xx, yy, slice_idx, kernel_3d, length_scale)
+                                                 for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop
 
             # insert interpolated data into pre-allocated volume
             print('\ncollecting data')
@@ -299,9 +296,9 @@ class ResampleData(object):
 
         z_pred, sig = model_gpy.predict(zq)
 
-        #plt.plot(X[:,2],y,'r.')
-        #plt.plot(zq[:,2], z_pred,'b.-')
-        #plt.show()
+        # plt.plot(X[:,2],y,'r.')
+        # plt.plot(zq[:,2], z_pred,'b.-')
+        # plt.show()
 
         # print progress update
         percentage_complete = ((((xx - np.min(self._xi)) * self._xi.shape[0]) + (yy - np.min(self._yi))) /
