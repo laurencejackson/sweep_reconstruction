@@ -154,7 +154,7 @@ class ResampleData(object):
             if self._kernel_dims > 1:
                 kernel_3d = True
 
-            length_scale = 4
+            length_scale = 3
             t1 = time.time()
 
             for xx in np.nditer(self._xi):
