@@ -157,14 +157,32 @@ class ResampleData(object):
             length_scale = 3
             t1 = time.time()
 
-            for xx in np.nditer(self._xi):
-                for yy in np.nditer(self._yi):
-                    y = self._get_training_y(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale)
-                    X = self._get_training_x(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale)
-                    zq = self._get_zq(xx, yy, kernel_3d=kernel_3d, length_scale=length_scale)
+            parallel = True
 
-                    v = self._rbf_interp(y, X, zq, xx, yy, self._xi, self._yi)
-                    self._img_4d[xx, yy, :, ww - 1] = v.flatten()
+            if parallel:
+                sub_arrays = Parallel(n_jobs=3, prefer="threads")(delayed(self._rbf_interp_line)  # function name
+                                                    (self._get_training_y(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale),
+                                                     self._get_training_x(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale),
+                                                     self._get_zq(xx, yy, kernel_3d=kernel_3d, length_scale=length_scale),
+                                                    xx, yy, self._xi, self._yi)
+                                                    for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop
+                # insert interpolated data into pre-allocated volume
+                print('\ncollecting data')
+                index = 0
+                for xx in np.nditer(self._xi):
+                    for yy in np.nditer(self._yi):
+                        self._img_4d[xx, yy, :, ww - 1] = sub_arrays[index].flatten()
+                        index = index + 1
+
+            else:
+                for xx in np.nditer(self._xi):
+                    for yy in np.nditer(self._yi):
+                        y = self._get_training_y(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale)
+                        X = self._get_training_x(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale)
+                        zq = self._get_zq(xx, yy, kernel_3d=kernel_3d, length_scale=length_scale)
+
+                        v = self._rbf_interp_line(y, X, zq, xx, yy, self._xi, self._yi)
+                        self._img_4d[xx, yy, :, ww - 1] = v.flatten()
 
             # save single resp state volumes
             self._image_resp_3d.set_data(self._img_4d[:, :, :, ww - 1])
@@ -315,11 +333,11 @@ class ResampleData(object):
         return z_pred
 
     @ staticmethod
-    def _rbf_interp(y, X, zq, xx, yy, xi, yi):
+    def _rbf_interp_line(y, X, zq, xx, yy, xi, yi):
         """Simple function to fit RBF model to one line of z data"""
         t1 = time.time()
 
-        rbfi = Rbf(X[:, 0], X[:, 1], X[:, 2], y[:, ], function='multiquadric', epsilon=0.5, smooth=10)
+        rbfi = Rbf(X[:, 0], X[:, 1], X[:, 2], y[:, ], function='gaussian', epsilon=0.5, smooth=10)
         z_pred = rbfi(zq[:, 0], zq[:, 1], zq[:, 2])
 
         # print progress update
