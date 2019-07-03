@@ -308,7 +308,7 @@ class ResampleData(object):
                                (self._xi.shape[0] * self._yi.shape[0])) * 100
 
         progress_string = 'Progress:\t' + '{:05.2f}'.format(percentage_complete) + '%'
-        sys.stdout.write('\r' + progress_string + '\ttime per line: ' + '{:05.3f}'.format(str(time.time() - t1)))
+        sys.stdout.write('\r' + progress_string + '\ttime per line: ' + '{:05.3f}'.format(time.time() - t1) + 's')
 
         return z_pred
 
