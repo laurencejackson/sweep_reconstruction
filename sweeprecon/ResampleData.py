@@ -262,9 +262,14 @@ class ResampleData(object):
         X = self._get_training_x(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale)
         zq = self._get_zq(xx, yy, kernel_3d=kernel_3d, length_scale=length_scale)
 
+        # less data
+        subset_fraction = 0.5
+
+        ss = np.random.choice(X.shape[0], int(X.shape[0]*subset_fraction), replace=False)
+
         # fit GPR model
         t1 = time.time()
-        self._gp.fit(X, y)
+        self._gp.fit(X[ss, :], y[ss, ])
         z_pred = self._gp.predict(zq)
 
         # print progress update
