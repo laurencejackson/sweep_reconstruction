@@ -9,9 +9,15 @@ import copy
 import time
 import numpy as np
 
+from scipy import interpolate
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 from joblib import delayed, Parallel, cpu_count
+
+# testing
+from scipy.interpolate import Rbf
+import matplotlib.pyplot as plt
+import GPy
 
 
 class ResampleData(object):
@@ -62,7 +68,7 @@ class ResampleData(object):
 
         elif self._interp_method == 'gpr':
             self._interp_gpr()
-
+            #self._interp_Gpy_stochastic()
         else:
             raise Exception('\nInvalid data re-sampling method: %s\n' % self._interp_method)
 
@@ -141,7 +147,7 @@ class ResampleData(object):
         kernel = 1.0 * RBF(length_scale=8, length_scale_bounds=(5, 20)) \
                  + WhiteKernel(noise_level=20, noise_level_bounds=(5, 50))
 
-        gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=0, normalize_y=True)
+        self._gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=0, normalize_y=True)
 
         # GPR functions already optimised to exploit parallel threads
         #  - parallelising this function might adversely increase overheads
@@ -158,13 +164,23 @@ class ResampleData(object):
         # start timer
         t1 = time.time()
 
+        k1 = GPy.kern.RBF(input_dim=3, lengthscale=2.)
+        k1['.*lengthscale'].constrain_bounded(1., 4.)
+        k2 = GPy.kern.RBF(input_dim=3, lengthscale=30.)
+        self._kernel_gpy = k1 + k2
+
+        self._yi = self._yi[100:120]
+        self._xi = self._xi[100:120]
+
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d [%d processes]' % (ww, cores))
             slice_idx = np.where(self._states == ww)
             self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
-            sub_arrays = Parallel(n_jobs=cores)(delayed(self._gpr_fit_line)  # function name
-                                               (gp, xx, yy, slice_idx, kernel_3d, length_scale)
+            self._initialise_kernel_space(4, slice_idx, cores, kernel_3d, length_scale)
+
+            sub_arrays = Parallel(n_jobs=cores)(delayed(self._gpr_fit_line_GPy)  # function name
+                                               (xx, yy, slice_idx, kernel_3d, length_scale)
                                                 for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop def
 
             # insert interpolated data into pre-allocated volume
@@ -242,22 +258,86 @@ class ResampleData(object):
 
         return np.vstack([X.ravel(), Y.ravel(), Z.ravel()])
 
-    def _gpr_fit_line(self, gp, xx, yy, slice_idx, kernel_3d, length_scale):
+    def _gpr_fit_line(self, xx, yy, slice_idx, kernel_3d, length_scale):
         """Simple parallel function to fit GPR model to one line of z data"""
-
+        t1 = time.time()
         y = self._get_training_y(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale)
         X = self._get_training_x(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale)
         zq = self._get_zq(xx, yy, kernel_3d=kernel_3d, length_scale=length_scale)
 
         # fit GPR model
-        gp.fit(X, y)
-        z_pred = gp.predict(zq)
+        t1 = time.time()
+        self._gp.fit(X, y)
+        z_pred = self._gp.predict(zq)
 
         # print progress update
         percentage_complete = ((((xx - np.min(self._xi)) * self._xi.shape[0]) + (yy - np.min(self._yi))) /
                                (self._xi.shape[0] * self._yi.shape[0])) * 100
 
         progress_string = 'Progress:\t' + '{:05.2f}'.format(percentage_complete) + '%'
-        sys.stdout.write('\r' + progress_string)
+        sys.stdout.write('\r' + progress_string + '\ttime per line:' + str(time.time() - t1) + 's')
 
         return z_pred
+
+    def _gpr_fit_line_GPy(self, xx, yy, slice_idx, kernel_3d, length_scale, calibrate=False):
+        """Simple function to fit GPR model to one line of z data"""
+
+        t1 = time.time()
+
+        y = self._get_training_y(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale)
+        X = self._get_training_x(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale)
+        zq = self._get_zq(xx, yy, kernel_3d=kernel_3d, length_scale=length_scale)
+
+        model_gpy = GPy.models.GPRegression(X, y.reshape(-1, 1), self._kernel_gpy)
+
+        if calibrate:
+            model_gpy.optimize(max_iters=10)
+            return model_gpy
+        else:
+            # read from parameter space
+            model_gpy[:] = self._kernel_space[xx, yy, :]
+
+        z_pred, sig = model_gpy.predict(zq)
+
+        #plt.plot(X[:,2],y,'r.')
+        #plt.plot(zq[:,2], z_pred,'b.-')
+        #plt.show()
+
+        # print progress update
+        percentage_complete = ((((xx - np.min(self._xi)) * self._xi.shape[0]) + (yy - np.min(self._yi))) /
+                               (self._xi.shape[0] * self._yi.shape[0])) * 100
+
+        progress_string = 'Progress:\t' + '{:05.2f}'.format(percentage_complete) + '%'
+        sys.stdout.write('\r' + progress_string + '\ttime per line: ' + '{.2f}'.format(str(time.time() - t1)))
+
+        return z_pred
+
+    def _initialise_kernel_space(self, nsamples, slice_idx, cores, kernel_3d, length_scale):
+        """Does a rough optimisation and interpolation of kernel parameters in 2d space"""
+        print('Initialising parameter space')
+        self._xis = self._xi[np.linspace(0, self._xi.shape[0]-1, nsamples).astype(int)]
+        self._yis = self._yi[np.linspace(0, self._yi.shape[0]-1, nsamples).astype(int)]
+
+        sub_arrays = Parallel(n_jobs=cores)(delayed(self._gpr_fit_line_GPy)  # function name
+                                            (xx, yy, slice_idx, kernel_3d, length_scale, calibrate=True)
+                                            for xx in np.nditer(self._xis) for yy in np.nditer(self._yis))  # loop def
+
+        # create empty parameter space
+        self._kernel_space = np.zeros(np.array([self._image.img.shape[0],
+                                                self._image.img.shape[1],
+                                                sub_arrays[0].param_array.shape[0]]).astype(int),
+                                      )
+
+        # insert interpolated data into pre-allocated volume
+        for pp in range(0, sub_arrays[0].param_array.shape[0]):  # for each parameter
+            samples = np.zeros([self._xis.shape[0], self._yis.shape[0]])
+
+            index = 0
+            for xi in range(0, self._xis.shape[0]):
+                for yi in range(0, self._yis.shape[0]):
+                    samples[xi, yi] = sub_arrays[index].param_array[pp]
+                    index = index + 1
+
+            f = interpolate.RectBivariateSpline(self._xis, self._yis, samples)
+
+            self._kernel_space[:, :, pp] = f(np.arange(0, self._image.img.shape[0]), np.arange(0, self._image.img.shape[1]))
