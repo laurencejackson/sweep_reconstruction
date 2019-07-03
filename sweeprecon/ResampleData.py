@@ -158,9 +158,13 @@ class ResampleData(object):
             t1 = time.time()
 
             parallel = True
+            if self._n_threads is 0:
+                cores = max(1, cpu_count() - 1)
+            else:
+                cores = self._n_threads
 
             if parallel:
-                sub_arrays = Parallel(n_jobs=3, prefer="threads")(delayed(self._rbf_interp_line)  # function name
+                sub_arrays = Parallel(n_jobs=cores, prefer="threads")(delayed(self._rbf_interp_line)  # function name
                                                     (self._get_training_y(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale),
                                                      self._get_training_x(xx, yy, slice_idx, kernel_3d=kernel_3d, length_scale=length_scale),
                                                      self._get_zq(xx, yy, kernel_3d=kernel_3d, length_scale=length_scale),
