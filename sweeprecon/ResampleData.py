@@ -9,7 +9,6 @@ import os
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["OMP_NUM_THREADS"] = "1"
-
 import sys
 import copy
 import time
@@ -159,9 +158,6 @@ class ResampleData(object):
         print('Running %d threads' % cores)
 
         use_mp = True
-
-        self._xi = self._xi[100:110]
-        self._yi = self._yi[100:110]
 
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d' % ww)
