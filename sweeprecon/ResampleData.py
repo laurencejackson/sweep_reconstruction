@@ -14,11 +14,6 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 from joblib import delayed, Parallel, cpu_count
 
-# testing
-from scipy.interpolate import Rbf
-import matplotlib.pyplot as plt
-import GPy
-
 
 class ResampleData(object):
 
@@ -146,22 +141,23 @@ class ResampleData(object):
         self._xi = np.int_(np.linspace(0, self._image.nii.header['dim'][1] - 1, self._image.nii.header['dim'][1]))
         self._yi = np.int_(np.linspace(0, self._image.nii.header['dim'][2] - 1, self._image.nii.header['dim'][2]))
 
+        if self._kernel_dims > 1:
+            kernel_3d = True
+
+        length_scale = 3
+        t1 = time.time()
+
+        parallel = True
+        if self._n_threads is 0:
+            cores = max(1, cpu_count() - 1)
+        else:
+            cores = self._n_threads
+        print('Running %d processes' % cores)
+
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d' % ww)
             slice_idx = np.where(self._states == ww)
             self._zs = (self._slice_locations[slice_idx,]).flatten()  # z-sample points
-
-            if self._kernel_dims > 1:
-                kernel_3d = True
-
-            length_scale = 3
-            t1 = time.time()
-
-            parallel = True
-            if self._n_threads is 0:
-                cores = max(1, cpu_count() - 1)
-            else:
-                cores = self._n_threads
 
             if parallel:
                 sub_arrays = Parallel(n_jobs=cores, prefer="threads")(delayed(self._rbf_interp_line)  # function name
@@ -170,6 +166,7 @@ class ResampleData(object):
                                                      self._get_zq(xx, yy, kernel_3d=kernel_3d, length_scale=length_scale),
                                                     xx, yy, self._xi, self._yi)
                                                     for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop
+
                 # insert interpolated data into pre-allocated volume
                 print('\ncollecting data')
                 index = 0
@@ -219,7 +216,7 @@ class ResampleData(object):
         else:
             cores = self._n_threads
 
-        length_scale = 2
+        length_scale = 4
 
         if self._kernel_dims > 1:
             kernel_3d = True
@@ -341,7 +338,7 @@ class ResampleData(object):
         """Simple function to fit RBF model to one line of z data"""
         t1 = time.time()
 
-        rbfi = Rbf(X[:, 0], X[:, 1], X[:, 2], y[:, ], function='gaussian', epsilon=0.5, smooth=10)
+        rbfi = interpolate.Rbf(X[:, 0], X[:, 1], X[:, 2], y[:, ], function='multiquadric', epsilon=0.5, smooth=10)
         z_pred = rbfi(zq[:, 0], zq[:, 1], zq[:, 2])
 
         # print progress update
