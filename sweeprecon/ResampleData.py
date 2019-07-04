@@ -162,7 +162,7 @@ class ResampleData(object):
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d' % ww)
 
-            pool = mp.Pool(max(1, int(cores/2)))  # use half available cores - reduces cpu overhead
+            pool = mp.Pool(cores)  # use half available cores - reduces cpu overhead
             tt = time.time()
             slice_idx = np.where(self._states == ww)
             self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
