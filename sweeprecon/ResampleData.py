@@ -236,7 +236,7 @@ class ResampleData(object):
         """Simple function to fit RBF model to one line of z data"""
         t1 = time.time()
 
-        rbfi = interpolate.Rbf(X[:, 0], X[:, 1], X[:, 2], y[:, ], function='multiquadric', epsilon=0.5, smooth=10)
+        rbfi = interpolate.Rbf(X[:, 0], X[:, 1], X[:, 2], y[:, ], function='multiquadric', epsilon=0.6, smooth=5)
         z_pred = rbfi(zq[:, 0], zq[:, 1], zq[:, 2])
 
         # print progress update

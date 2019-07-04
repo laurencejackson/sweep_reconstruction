@@ -18,6 +18,10 @@ class WritePaths(object):
         self._args = args
 
         # create output folders
+        self._exclude_lists_folder = 'exclude_lists'
+        if not os.path.exists(self._exclude_lists_folder):
+            os.makedirs(self._exclude_lists_folder)
+
         self._resp_vols_linear_folder = '3D_respiration_volumes_linear'
         if not os.path.exists(self._resp_vols_linear_folder):
             os.makedirs(self._resp_vols_linear_folder)
@@ -26,6 +30,8 @@ class WritePaths(object):
             self._resp_vols_folder = '3D_respiration_volumes_rbf'
             if not os.path.exists(self._resp_vols_folder):
                 os.makedirs(self._resp_vols_folder)
+
+
 
     # path definition functions
     def path_sorted(self):
@@ -73,7 +79,6 @@ class WritePaths(object):
     def path_interpolated_4d_linear(self):
         return os.path.join(os.getcwd(),  # cwd
                             'IMG_4D_linear_' +
-                            self._args.interpolator + '_' +
                             self.basename
                             )
 
@@ -84,3 +89,10 @@ class WritePaths(object):
                      str(resp_state) + '_' +
                      self.basename
                      )
+
+    def path_exclude_file(self, ww):
+        return os.path.join(os.getcwd(),  # cwd
+                            'exclude_list_' +  # prefix
+                            str(ww) +  # basename
+                            '.txt'  # file ext
+                            )
