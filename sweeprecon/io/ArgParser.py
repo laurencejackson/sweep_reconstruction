@@ -88,7 +88,7 @@ class ArgParser(object):
     def add_interpolator(self,
                          option_string=("-x", "--interpolator"),
                          metavar='',
-                         help="choose interpolater to use [options: 'fast_linear' or 'gpr']",
+                         help="choose interpolater to use [options: 'fast_linear' or 'rbf']",
                          required=False,
                          default='fast_linear'
                          ):
@@ -97,7 +97,7 @@ class ArgParser(object):
     def add_kernel_dims(self,
                         option_string=("-k", "--kernel_dims"),
                         metavar='',
-                        help="number of dimensions in gpr interpolation kernel [options: 1, 3]",
+                        help="Size of interpolation kernel (recommended values 2->4) [default: 2]",
                         required=False,
                         type=int,
                         default=1
