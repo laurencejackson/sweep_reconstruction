@@ -5,7 +5,7 @@ Estimates a respiration signal from a sequence of dynamic 2D images
 Laurence Jackson, BME, KCL, 2019
 """
 
-import os
+import numpy as np
 
 from sweeprecon.EstimateRespiration import EstimateRespiration
 from sweeprecon.ClassifyRespiration import ClassifyRespiration
@@ -81,6 +81,11 @@ def app_estimate_respiration(pipeline=False):
     logger.set_key('resp_trend', resp.resp_trend)
     logger.set_key('resp_trace', resp.resp_trace)
     logger.set_key('resp_states', classifier.index)
+
+    # save excludes list
+    for ww in range(1, args.nstates+1):
+        slice_idx = np.where((logger.log.resp_states != ww) & (logger.log.resp_states != 0))
+        np.savetxt(write_paths.path_exclude_file(ww), slice_idx, fmt='%d', newline=' ')
 
     # log complete
     logger.set_key('flag_estimated_respiration', True)
