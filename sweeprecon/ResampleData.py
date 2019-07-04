@@ -4,6 +4,12 @@ Class containing data and functions for re-sampling 3D data into respiration res
 Laurence Jackson, BME, KCL 2019
 """
 
+# limit number of threads
+import os
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+
 import sys
 import copy
 import time
@@ -166,6 +172,7 @@ class ResampleData(object):
             self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
             if use_mp:
+                print('using multiprocessing')
                 sub_arrays = []
                 sub_arrays = pool.starmap_async(self._rbf_interp_line,
                                              [(self._get_training_y(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
