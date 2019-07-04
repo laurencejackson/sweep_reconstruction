@@ -100,6 +100,7 @@ class WritePaths(object):
 
     def path_exclude_file(self, ww):
         return os.path.join(os.getcwd(),  # cwd
+                            self._exclude_lists_folder,
                             'exclude_list_' +  # prefix
                             str(ww) +  # basename
                             '.txt'  # file ext

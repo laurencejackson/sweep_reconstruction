@@ -7,6 +7,7 @@ Laurence Jackson, BME, KCL 2019
 import sys
 import copy
 import time
+import multiprocessing as mp
 import numpy as np
 
 from scipy import interpolate
@@ -137,11 +138,13 @@ class ResampleData(object):
 
     def _interp_rbf(self):
         """Interpolate using radial basis function"""
+
+        # reinit vols
+        self._init_vols()
+
         # define indexed points
         self._xi = np.int_(np.linspace(0, self._image.nii.header['dim'][1] - 1, self._image.nii.header['dim'][1]))
         self._yi = np.int_(np.linspace(0, self._image.nii.header['dim'][2] - 1, self._image.nii.header['dim'][2]))
-
-        t1 = time.time()
 
         if self._n_threads is 0:
             cores = max(1, cpu_count() - 1)
@@ -149,17 +152,40 @@ class ResampleData(object):
             cores = self._n_threads
         print('Running %d threads' % cores)
 
+        use_mp = True
+
+        self._xi = self._xi[100:110]
+        self._yi = self._yi[100:110]
+
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d' % ww)
-            slice_idx = np.where(self._states == ww)
-            self._zs = (self._slice_locations[slice_idx,]).flatten()  # z-sample points
 
-            sub_arrays = Parallel(n_jobs=cores, prefer="threads")(delayed(self._rbf_interp_line)  # function name
-                                            (self._get_training_y(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
+            pool = mp.Pool(max(1, int(cores/2)))  # use half available cores - reduces cpu overhead
+            tt = time.time()
+            slice_idx = np.where(self._states == ww)
+            self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
+
+            if use_mp:
+                sub_arrays = []
+                sub_arrays = pool.starmap_async(self._rbf_interp_line,
+                                             [(self._get_training_y(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
                                              self._get_training_x(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
                                              self._get_zq(xx, yy, kernel_dim=self._kernel_dims),
-                                            xx, yy, self._xi, self._yi)
-                                            for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop
+                                            xx, yy, self._xi, self._yi) for xx in np.nditer(self._xi) for yy in np.nditer(self._yi)]).get()
+
+            else:
+                print('use joblib')
+                sub_arrays = Parallel(n_jobs=cores, prefer="threads")(delayed(self._rbf_interp_line)  # function name
+                                                (self._get_training_y(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
+                                                 self._get_training_x(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
+                                                 self._get_zq(xx, yy, kernel_dim=self._kernel_dims),
+                                                xx, yy, self._xi, self._yi)
+                                                for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop
+
+            # print function duration info
+            pool.close()
+
+            print('%s duration: %.1fs' % ('_interp_rbf', (time.time() - tt)))
 
             # insert interpolated data into pre-allocated volume
             print('\ncollecting data')
@@ -179,7 +205,7 @@ class ResampleData(object):
         self._write_resampled_data(self._image_resp_3d, self._write_paths.path_interpolated_4d())
 
         # print function duration info
-        print('%s duration: %.1fs' % ('_interp_rbf', (time.time() - t1)))
+        print('%s duration: %.1fs' % ('_interp_rbf', (time.time() - tt)))
 
     def _get_training_y(self, x, y, slice_idx, kernel_dim=1):
         """Gets array of training point values"""
@@ -251,3 +277,4 @@ class ResampleData(object):
         sys.stdout.write('\r' + progress_string + '\ttime per line: ' + '{:05.3f}'.format(time.time() - t1) + 's')
 
         return z_pred
+
