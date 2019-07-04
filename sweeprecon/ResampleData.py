@@ -126,6 +126,11 @@ class ResampleData(object):
                     z_interp = np.interp(self._zq, zs, self._image.img[xx, yy, slice_idx].flatten())
                     self._img_4d[xx, yy, :, ww - 1] = z_interp.flatten()
 
+            # save single resp state volumes
+            self._image_resp_3d.set_data(self._img_4d[:, :, :, ww - 1])
+            self._write_resampled_data(self._image_resp_3d, self._write_paths.path_interpolated_3d_linear(ww))
+            print('---')
+
         # write to file
         self._image_4d.set_data(self._img_4d)
         self._write_resampled_data(self._image_4d, self._write_paths.path_interpolated_4d_linear())
@@ -150,11 +155,11 @@ class ResampleData(object):
             self._zs = (self._slice_locations[slice_idx,]).flatten()  # z-sample points
 
             sub_arrays = Parallel(n_jobs=cores, prefer="threads")(delayed(self._rbf_interp_line)  # function name
-                                                (self._get_training_y(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
-                                                 self._get_training_x(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
-                                                 self._get_zq(xx, yy, kernel_dim=self._kernel_dims),
-                                                xx, yy, self._xi, self._yi)
-                                                for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop
+                                            (self._get_training_y(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
+                                             self._get_training_x(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
+                                             self._get_zq(xx, yy, kernel_dim=self._kernel_dims),
+                                            xx, yy, self._xi, self._yi)
+                                            for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop
 
             # insert interpolated data into pre-allocated volume
             print('\ncollecting data')
@@ -236,7 +241,7 @@ class ResampleData(object):
         """Simple function to fit RBF model to one line of z data"""
         t1 = time.time()
 
-        rbfi = interpolate.Rbf(X[:, 0], X[:, 1], X[:, 2], y[:, ], function='multiquadric', epsilon=0.6, smooth=5)
+        rbfi = interpolate.Rbf(X[:, 0], X[:, 1], X[:, 2], y[:, ], function='multiquadric', epsilon=0.6, smooth=4)
         z_pred = rbfi(zq[:, 0], zq[:, 1], zq[:, 2])
 
         # print progress update
