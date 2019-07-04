@@ -10,8 +10,6 @@ import time
 import numpy as np
 
 from scipy import interpolate
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 from joblib import delayed, Parallel, cpu_count
 
 
@@ -33,7 +31,7 @@ class ResampleData(object):
         :param states: vector mapping each slice of image to a respiration state
         :param slice_locations: vector mapping each slice to a spatial position relative to origin
         :param write_paths: WritePaths object containing paths to write output
-        :param interp_method: method for interpolation, 'fast_linear' or 'rbf' (slower and smoother)
+        :param interp_method: method for interpolation, 'fast_linear' or 'rbf' (slower but smoother)
         :param resolution: resolution of output - defaults to 'isotropic' but also takes a float [mm]
         """
 
@@ -56,14 +54,14 @@ class ResampleData(object):
         self._get_query_points()
         self._init_vols()
 
-        # perform chosen interpolation
+        # perform fast interpolation
+        print('Performing fast interpolation')
+        self._interp_fast_linear()
+
+        # perform chosen refined interpolation
         print('Re-sampling method: %s' % self._interp_method)
-        if self._interp_method == 'fast_linear':
-            self._interp_fast_linear()
-
-        elif self._interp_method == 'rbf':
+        if self._interp_method == 'rbf':
             self._interp_rbf()
-
         else:
             raise Exception('\nInvalid data re-sampling method: %s\n' % self._interp_method)
 
@@ -144,7 +142,7 @@ class ResampleData(object):
             cores = max(1, cpu_count() - 1)
         else:
             cores = self._n_threads
-        print('Running %d processes' % cores)
+        print('Running %d threads' % cores)
 
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d' % ww)
@@ -246,9 +244,5 @@ class ResampleData(object):
                                (xi.shape[0] * yi.shape[0])) * 100
         progress_string = 'Progress:\t' + '{:05.2f}'.format(percentage_complete) + '%'
         sys.stdout.write('\r' + progress_string + '\ttime per line: ' + '{:05.3f}'.format(time.time() - t1) + 's')
-
-        #plt.plot(X[:,2],y,'r.')
-        #plt.plot(zq[:,2], z_pred, 'b.-')
-        #plt.show()
 
         return z_pred

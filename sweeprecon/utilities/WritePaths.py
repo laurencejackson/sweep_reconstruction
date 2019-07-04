@@ -17,12 +17,15 @@ class WritePaths(object):
         self.state = 0
         self._args = args
 
-        # folder names
-        self._resp_vols_folder = '3D_respiration_volumes'
-
         # create output folders
-        if not os.path.exists(self._resp_vols_folder):
-            os.makedirs(self._resp_vols_folder)
+        self._resp_vols_linear_folder = '3D_respiration_volumes_linear'
+        if not os.path.exists(self._resp_vols_linear_folder):
+            os.makedirs(self._resp_vols_linear_folder)
+
+        if args.interpolator == 'rbf':
+            self._resp_vols_folder = '3D_respiration_volumes_rbf'
+            if not os.path.exists(self._resp_vols_folder):
+                os.makedirs(self._resp_vols_folder)
 
     # path definition functions
     def path_sorted(self):
