@@ -53,6 +53,7 @@ class ResampleData(object):
         self._nstates = np.max(states)
         self._kernel_dims = kernel_dims
         self._n_threads = n_threads
+#
 
     def run(self):
         """Runs chosen re-sampling scheme """
@@ -158,32 +159,21 @@ class ResampleData(object):
         else:
             cores = self._n_threads
 
-        use_mp = True
         print('Starting pool: %d processes' % cores)
         pool = mp.Pool(cores)  # use half available cores - reduces cpu overhead
-        tt = time.time()
+        t1 = time.time()
 
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d' % ww)
+            tt = time.time()
             slice_idx = np.where(self._states == ww)
             self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
-            if use_mp:
-                print('using multiprocessing')
-                sub_arrays = pool.starmap_async(self._rbf_interp_line,
-                                             [(self._get_training_y(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
-                                             self._get_training_x(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
-                                             self._get_zq(xx, yy, kernel_dim=self._kernel_dims))
-                                              for xx in np.nditer(self._xi) for yy in np.nditer(self._yi)]).get()
-
-            else:
-                print('use joblib')
-                sub_arrays = Parallel(n_jobs=cores, prefer="threads")(delayed(self._rbf_interp_line)  # function name
-                                                (self._get_training_y(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
-                                                 self._get_training_x(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
-                                                 self._get_zq(xx, yy, kernel_dim=self._kernel_dims),
-                                                xx, yy, self._xi, self._yi)
-                                                for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop
+            sub_arrays = pool.starmap_async(self._rbf_interp_line,
+                                         [(self._get_training_y(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
+                                         self._get_training_x(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
+                                         self._get_zq(xx, yy, kernel_dim=self._kernel_dims))
+                                          for xx in np.nditer(self._xi) for yy in np.nditer(self._yi)]).get()
 
             print('%s duration: %.1fs' % ('_interp_rbf', (time.time() - tt)))
 
@@ -207,7 +197,7 @@ class ResampleData(object):
         self._write_resampled_data(self._image_resp_3d, self._write_paths.path_interpolated_4d())
 
         # print function duration info
-        print('%s duration: %.1fs' % ('_interp_rbf', (time.time() - tt)))
+        print('%s duration: %.1fs' % ('_interp_rbf', (time.time() - t1)))
 
     def _get_training_y(self, x, y, slice_idx, kernel_dim=1):
         """Gets array of training point values"""
@@ -271,7 +261,6 @@ class ResampleData(object):
         rbfi = interpolate.Rbf(X[:, 0], X[:, 1], X[:, 2], y[:, ], function='multiquadric', epsilon=0.6, smooth=4)
         z_pred = rbfi(zq[:, 0], zq[:, 1], zq[:, 2])
 
-        time_per_line_string = 'CPU time per line = {:.2f}'.format(time.time() - t1)
-        sys.stdout.write('\r' + time_per_line_string)
+        sys.stdout.write('\r' + 'CPU time per line = {:.3f}'.format(time.time() - t1))
 
         return z_pred
