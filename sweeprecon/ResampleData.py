@@ -6,6 +6,7 @@ Laurence Jackson, BME, KCL 2019
 
 # limit number of threads
 import os
+# limit threading to reduce cpu overhead in parallel processes
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -114,12 +115,16 @@ class ResampleData(object):
                                (self._dxyz[2] * (nslices-1)),
                                nslices)  # z-query points
 
+    def _define_index_xy(self):
+        """Defines indexed points in x and y"""
+        self._xi = np.int_(np.linspace(0, self._image.nii.header['dim'][1] - 1, self._image.nii.header['dim'][1]))
+        self._yi = np.int_(np.linspace(0, self._image.nii.header['dim'][2] - 1, self._image.nii.header['dim'][2]))
+
     def _interp_fast_linear(self):
         """Linear interpolation onto regular grid - fastest interpolation method"""
 
         # define indexed points
-        self._xi = np.int_(np.linspace(0, self._image.nii.header['dim'][1] - 1, self._image.nii.header['dim'][1]))
-        self._yi = np.int_(np.linspace(0, self._image.nii.header['dim'][2] - 1, self._image.nii.header['dim'][2]))
+        self._define_index_xy()
 
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d' % ww)
@@ -144,37 +149,32 @@ class ResampleData(object):
     def _interp_rbf(self):
         """Interpolate using radial basis function"""
 
-        # reinit vols
+        # re-initialise vols
         self._init_vols()
-
-        # define indexed points
-        self._xi = np.int_(np.linspace(0, self._image.nii.header['dim'][1] - 1, self._image.nii.header['dim'][1]))
-        self._yi = np.int_(np.linspace(0, self._image.nii.header['dim'][2] - 1, self._image.nii.header['dim'][2]))
+        self._define_index_xy()
 
         if self._n_threads is 0:
             cores = max(1, cpu_count() - 1)
         else:
             cores = self._n_threads
-        print('Running %d threads' % cores)
 
         use_mp = True
+        print('Starting pool: %d processes' % cores)
+        pool = mp.Pool(cores)  # use half available cores - reduces cpu overhead
+        tt = time.time()
 
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d' % ww)
-
-            pool = mp.Pool(cores)  # use half available cores - reduces cpu overhead
-            tt = time.time()
             slice_idx = np.where(self._states == ww)
             self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
             if use_mp:
                 print('using multiprocessing')
-                sub_arrays = []
                 sub_arrays = pool.starmap_async(self._rbf_interp_line,
                                              [(self._get_training_y(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
                                              self._get_training_x(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
-                                             self._get_zq(xx, yy, kernel_dim=self._kernel_dims),
-                                            xx, yy, self._xi, self._yi) for xx in np.nditer(self._xi) for yy in np.nditer(self._yi)]).get()
+                                             self._get_zq(xx, yy, kernel_dim=self._kernel_dims))
+                                              for xx in np.nditer(self._xi) for yy in np.nditer(self._yi)]).get()
 
             else:
                 print('use joblib')
@@ -184,9 +184,6 @@ class ResampleData(object):
                                                  self._get_zq(xx, yy, kernel_dim=self._kernel_dims),
                                                 xx, yy, self._xi, self._yi)
                                                 for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop
-
-            # print function duration info
-            pool.close()
 
             print('%s duration: %.1fs' % ('_interp_rbf', (time.time() - tt)))
 
@@ -202,6 +199,8 @@ class ResampleData(object):
             self._image_resp_3d.set_data(self._img_4d[:, :, :, ww - 1])
             self._write_resampled_data(self._image_resp_3d, self._write_paths.path_interpolated_3d(ww))
             print('---')
+
+        pool.close()
 
         # write full 4D interp volume
         self._image_4d.set_data(self._img_4d)
@@ -266,18 +265,13 @@ class ResampleData(object):
         return np.vstack([X.ravel(), Y.ravel(), Z.ravel()])
 
     @ staticmethod
-    def _rbf_interp_line(y, X, zq, xx, yy, xi, yi):
+    def _rbf_interp_line(y, X, zq):
         """Simple function to fit RBF model to one line of z data"""
         t1 = time.time()
-
         rbfi = interpolate.Rbf(X[:, 0], X[:, 1], X[:, 2], y[:, ], function='multiquadric', epsilon=0.6, smooth=4)
         z_pred = rbfi(zq[:, 0], zq[:, 1], zq[:, 2])
 
-        # print progress update
-        percentage_complete = ((((xx - np.min(xi)) * xi.shape[0]) + (yy - np.min(yi))) /
-                               (xi.shape[0] * yi.shape[0])) * 100
-        progress_string = 'Progress:\t' + '{:05.2f}'.format(percentage_complete) + '%'
-        sys.stdout.write('\r' + progress_string + '\ttime per line: ' + '{:05.3f}'.format(time.time() - t1) + 's')
+        time_per_line_string = 'CPU time per line = {:.2f}'.format(time.time() - t1)
+        sys.stdout.write('\r' + time_per_line_string)
 
         return z_pred
-
