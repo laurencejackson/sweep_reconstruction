@@ -4,20 +4,15 @@ Class containing data and functions for re-sampling 3D data into respiration res
 Laurence Jackson, BME, KCL 2019
 """
 
-# limit number of threads
 import os
-# limit threading to reduce cpu overhead in parallel processes
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-os.environ["OMP_NUM_THREADS"] = "1"
 import sys
 import copy
 import time
+import importlib
 import multiprocessing as mp
 import numpy as np
 
 from scipy import interpolate
-from joblib import delayed, Parallel, cpu_count
 
 
 class ResampleData(object):
@@ -150,18 +145,30 @@ class ResampleData(object):
     def _interp_rbf(self):
         """Interpolate using radial basis function"""
 
+        # limit threading to reduce cpu overhead in parallel processes
+        os.environ["MKL_NUM_THREADS"] = "1"
+        os.environ["NUMEXPR_NUM_THREADS"] = "1"
+        os.environ["OMP_NUM_THREADS"] = "1"
+
+        # reload relevant modules for thread changes to take effect
+        importlib.reload(np)
+        importlib.reload(interpolate)
+
         # re-initialise vols
         self._init_vols()
         self._define_index_xy()
 
         if self._n_threads is 0:
-            cores = max(1, cpu_count() - 1)
+            cores = max(1, mp.cpu_count() - 1)
         else:
             cores = self._n_threads
 
         print('Starting pool: %d processes' % cores)
         pool = mp.Pool(cores)  # use half available cores - reduces cpu overhead
         t1 = time.time()
+
+        self._xi = self._xi[1:15]
+        self._yi = self._yi[1:15]
 
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d' % ww)
@@ -191,6 +198,9 @@ class ResampleData(object):
             print('---')
 
         pool.close()
+
+        # reset python environ to normalise threading
+        os.environ.clear()
 
         # write full 4D interp volume
         self._image_4d.set_data(self._img_4d)
