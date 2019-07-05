@@ -163,9 +163,6 @@ class ResampleData(object):
         pool = mp.Pool(cores)  # use half available cores - reduces cpu overhead
         t1 = time.time()
 
-        self._xi = self._xi[1:15]
-        self._yi = self._yi[1:15]
-
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d' % ww)
             tt = time.time()
