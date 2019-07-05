@@ -4,9 +4,16 @@ Class containing data and functions for re-sampling 3D data into respiration res
 Laurence Jackson, BME, KCL 2019
 """
 
+# limit number of threads
+import os
+# limit threading to reduce cpu overhead in parallel processes
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
 import sys
 import copy
 import time
+import multiprocessing as mp
 import numpy as np
 
 from scipy import interpolate
@@ -46,6 +53,7 @@ class ResampleData(object):
         self._nstates = np.max(states)
         self._kernel_dims = kernel_dims
         self._n_threads = n_threads
+#
 
     def run(self):
         """Runs chosen re-sampling scheme """
@@ -108,12 +116,16 @@ class ResampleData(object):
                                (self._dxyz[2] * (nslices-1)),
                                nslices)  # z-query points
 
+    def _define_index_xy(self):
+        """Defines indexed points in x and y"""
+        self._xi = np.int_(np.linspace(0, self._image.nii.header['dim'][1] - 1, self._image.nii.header['dim'][1]))
+        self._yi = np.int_(np.linspace(0, self._image.nii.header['dim'][2] - 1, self._image.nii.header['dim'][2]))
+
     def _interp_fast_linear(self):
         """Linear interpolation onto regular grid - fastest interpolation method"""
 
         # define indexed points
-        self._xi = np.int_(np.linspace(0, self._image.nii.header['dim'][1] - 1, self._image.nii.header['dim'][1]))
-        self._yi = np.int_(np.linspace(0, self._image.nii.header['dim'][2] - 1, self._image.nii.header['dim'][2]))
+        self._define_index_xy()
 
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d' % ww)
@@ -126,35 +138,44 @@ class ResampleData(object):
                     z_interp = np.interp(self._zq, zs, self._image.img[xx, yy, slice_idx].flatten())
                     self._img_4d[xx, yy, :, ww - 1] = z_interp.flatten()
 
+            # save single resp state volumes
+            self._image_resp_3d.set_data(self._img_4d[:, :, :, ww - 1])
+            self._write_resampled_data(self._image_resp_3d, self._write_paths.path_interpolated_3d_linear(ww))
+            print('---')
+
         # write to file
         self._image_4d.set_data(self._img_4d)
         self._write_resampled_data(self._image_4d, self._write_paths.path_interpolated_4d_linear())
 
     def _interp_rbf(self):
         """Interpolate using radial basis function"""
-        # define indexed points
-        self._xi = np.int_(np.linspace(0, self._image.nii.header['dim'][1] - 1, self._image.nii.header['dim'][1]))
-        self._yi = np.int_(np.linspace(0, self._image.nii.header['dim'][2] - 1, self._image.nii.header['dim'][2]))
 
-        t1 = time.time()
+        # re-initialise vols
+        self._init_vols()
+        self._define_index_xy()
 
         if self._n_threads is 0:
             cores = max(1, cpu_count() - 1)
         else:
             cores = self._n_threads
-        print('Running %d threads' % cores)
+
+        print('Starting pool: %d processes' % cores)
+        pool = mp.Pool(cores)  # use half available cores - reduces cpu overhead
+        t1 = time.time()
 
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d' % ww)
+            tt = time.time()
             slice_idx = np.where(self._states == ww)
-            self._zs = (self._slice_locations[slice_idx,]).flatten()  # z-sample points
+            self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
-            sub_arrays = Parallel(n_jobs=cores, prefer="threads")(delayed(self._rbf_interp_line)  # function name
-                                                (self._get_training_y(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
-                                                 self._get_training_x(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
-                                                 self._get_zq(xx, yy, kernel_dim=self._kernel_dims),
-                                                xx, yy, self._xi, self._yi)
-                                                for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))  # loop
+            sub_arrays = pool.starmap_async(self._rbf_interp_line,
+                                         [(self._get_training_y(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
+                                         self._get_training_x(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
+                                         self._get_zq(xx, yy, kernel_dim=self._kernel_dims))
+                                          for xx in np.nditer(self._xi) for yy in np.nditer(self._yi)]).get()
+
+            print('%s duration: %.1fs' % ('_interp_rbf', (time.time() - tt)))
 
             # insert interpolated data into pre-allocated volume
             print('\ncollecting data')
@@ -168,6 +189,8 @@ class ResampleData(object):
             self._image_resp_3d.set_data(self._img_4d[:, :, :, ww - 1])
             self._write_resampled_data(self._image_resp_3d, self._write_paths.path_interpolated_3d(ww))
             print('---')
+
+        pool.close()
 
         # write full 4D interp volume
         self._image_4d.set_data(self._img_4d)
@@ -232,17 +255,12 @@ class ResampleData(object):
         return np.vstack([X.ravel(), Y.ravel(), Z.ravel()])
 
     @ staticmethod
-    def _rbf_interp_line(y, X, zq, xx, yy, xi, yi):
+    def _rbf_interp_line(y, X, zq):
         """Simple function to fit RBF model to one line of z data"""
         t1 = time.time()
-
-        rbfi = interpolate.Rbf(X[:, 0], X[:, 1], X[:, 2], y[:, ], function='multiquadric', epsilon=0.6, smooth=5)
+        rbfi = interpolate.Rbf(X[:, 0], X[:, 1], X[:, 2], y[:, ], function='multiquadric', epsilon=0.6, smooth=4)
         z_pred = rbfi(zq[:, 0], zq[:, 1], zq[:, 2])
 
-        # print progress update
-        percentage_complete = ((((xx - np.min(xi)) * xi.shape[0]) + (yy - np.min(yi))) /
-                               (xi.shape[0] * yi.shape[0])) * 100
-        progress_string = 'Progress:\t' + '{:05.2f}'.format(percentage_complete) + '%'
-        sys.stdout.write('\r' + progress_string + '\ttime per line: ' + '{:05.3f}'.format(time.time() - t1) + 's')
+        sys.stdout.write('\r' + 'CPU time per line = {:.3f}'.format(time.time() - t1))
 
         return z_pred

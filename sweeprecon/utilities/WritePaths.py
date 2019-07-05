@@ -82,6 +82,14 @@ class WritePaths(object):
                             self.basename
                             )
 
+    def path_interpolated_3d_linear(self, resp_state):
+        return os.path.join(os.getcwd(),  # cwd
+                     self._resp_vols_linear_folder,
+                     'IMG_3D_resp_' +
+                     str(resp_state) + '_' +
+                     self.basename
+                     )
+
     def path_interpolated_3d(self, resp_state):
         return os.path.join(os.getcwd(),  # cwd
                      self._resp_vols_folder,
@@ -92,6 +100,7 @@ class WritePaths(object):
 
     def path_exclude_file(self, ww):
         return os.path.join(os.getcwd(),  # cwd
+                            self._exclude_lists_folder,
                             'exclude_list_' +  # prefix
                             str(ww) +  # basename
                             '.txt'  # file ext
