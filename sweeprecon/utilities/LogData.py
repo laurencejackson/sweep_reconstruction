@@ -67,10 +67,3 @@ class LogData(object):
         with open(path, 'rb') as pickle_file:
             self.log = pickle.load(pickle_file)
 
-    def print_log(self):
-        # TODO
-        pass
-
-    def write_log_to_text(self):
-        # TODO
-        pass

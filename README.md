@@ -54,7 +54,7 @@ conda activate sweep_venv
 ~~~~
 
 #### Setup
-Clone the repository to your local machine and install module dependencies: 
+Clone the repository to your local machine and install module dependencies (e.g. using pip) 
 ~~~~
 git clone https://github.com/laurencejackson/sweep_reconstruction.git
 cd sweep_reconstruction
@@ -68,7 +68,7 @@ An example dataset is included in `data/example_SWEEP_data.nii.gz` to demonstrat
 
 Note that when the code runs it saves output images and log data to the current working directory, so make sure you navigate to a location where you wish to save the output. 
 
-The code runs fairly fast <1min using the default options. If you choose to use the option `--interpolation gpr` the output will be more accurate and smoother, but will take significantly longer (approx 7 hours on 4 threads). Note also that the code is capable of parallel execution on multi-core CPUs. By default this runs on one less than the maximum cpu thread count to allow the code to run in the background. If running the code remotely where this is not important then modify the `cores` variable in ResampleData and EstimateRespiration to use all available threads.
+The code runs fairly fast <1min using the default options. If you choose to use the option `--interpolation rbf` the output will be smoother, but will take significantly longer (approx 7 hours on 4 threads). Note also that the code is capable of parallel execution on multi-core CPUs. By default this runs on one less than the maximum cpu thread count to allow the code to run in the background. If running the code remotely where this is not important then modify the `cores` variable in ResampleData and EstimateRespiration to use all available threads.
 
 
 

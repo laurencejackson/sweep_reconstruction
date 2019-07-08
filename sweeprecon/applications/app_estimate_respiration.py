@@ -57,9 +57,6 @@ def app_estimate_respiration(pipeline=False):
         write_paths = WritePaths(args)
         image = ImageData(write_paths.path_sorted())
 
-    # make sure input argument is 3D and check if already done or redo flagged
-    # TODO
-
     # Estimate respiration
     resp = EstimateRespiration(image,
                                write_paths,
