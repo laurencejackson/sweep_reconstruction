@@ -10,7 +10,7 @@ import copy
 
 import sweeprecon.utilities.PlotFigures as PlotFigures
 
-from joblib import delayed, Parallel, cpu_count
+from multiprocessing import Pool, cpu_count
 from scipy.ndimage import gaussian_filter
 from scipy.signal import medfilt2d
 from skimage import restoration, measure, segmentation
@@ -54,7 +54,6 @@ class EstimateRespiration(object):
 
     def run(self):
         """Runs chosen respiration estimating method"""
-
         if self._resp_method == 'body_area':
             self._method_body_area()
         else:
@@ -213,7 +212,7 @@ class EstimateRespiration(object):
         :param kernel_size: size of median kernel
         :return:
         """
-        return medfilt2d(imgs[0], [kernel_size, kernel_size])  # median filter more robust to bands in balanced images
+        return medfilt2d(imgs, [kernel_size, kernel_size])  # median filter more robust to bands in balanced images
 
     @staticmethod
     def _filter_denoise(imgs, weight=0.003):
@@ -223,7 +222,7 @@ class EstimateRespiration(object):
         :param weight: TV weight
         :return:
         """
-        return restoration.denoise_tv_bregman(imgs[0], weight=weight)
+        return restoration.denoise_tv_bregman(imgs, weight=weight)
 
     @staticmethod
     def _filter_inv_gauss(imgs, alpha=10, sigma=1.5):
@@ -233,7 +232,7 @@ class EstimateRespiration(object):
         :param weight: TV weight
         :return:
         """
-        return segmentation.inverse_gaussian_gradient(imgs[0], alpha=alpha, sigma=sigma)
+        return segmentation.inverse_gaussian_gradient(imgs, alpha=alpha, sigma=sigma)
 
     @staticmethod
     def _segment_cv(imgs, iterations=200):
@@ -252,16 +251,16 @@ class EstimateRespiration(object):
                                                     )
 
     @staticmethod
-    def _segment_gac(imgs, iterations=20):
+    def _segment_gac(img, init_level_set, iterations=20):
         """
         refines initial segmentation contours using geodesic active contours
         :param imgs: list of 2 images [2D] imgs[0] = slice to segment: imgs[1] = initial level set
         :param iterations: number of refinement iterations
         :return:
         """
-        return segmentation.morphological_geodesic_active_contour(imgs[0],
+        return segmentation.morphological_geodesic_active_contour(img,
                                                                   iterations,
-                                                                  init_level_set=imgs[1],
+                                                                  init_level_set=init_level_set,
                                                                   smoothing=2,
                                                                   balloon=1.2
                                                                   )
@@ -276,20 +275,21 @@ class EstimateRespiration(object):
         :return:
         """
 
+        # cores defaults to number of CPUs - 1
+        if cores is 0:
+            cores = max(1, cpu_count() - 1)
+
+        pool = Pool(cores)
+
         # start timer
         t1 = time.time()
 
         # convert to list
         vols = list(vols)
 
-        # cores defaults to number of CPUs - 1
-        if cores is 0:
-            cores = max(1, cpu_count() - 1)
-
-        # run function with input vols
-        sub_arrays = Parallel(n_jobs=cores)(  # Use n cores
-            delayed(function_name)([vols[v][:, :, zz] for v in range(0, vols.__len__())])  # Apply function_name
-            for zz in range(0, vols[0].shape[2]))  # For each 3rd dimension
+        sub_arrays = pool.starmap_async(function_name,
+                                        [([vols[v][:, :, zz] for v in range(0, vols.__len__())])
+                                         for zz in range(0, vols[0].shape[2])]).get()
 
         # print function duration info
         print('%s duration: %.1fs [%d processes]' % (function_name.__name__, (time.time() - t1), cores))
