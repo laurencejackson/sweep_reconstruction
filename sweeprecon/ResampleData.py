@@ -14,7 +14,6 @@ os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import sys
 import copy
 import time
-import importlib
 import multiprocessing as mp
 import numpy as np
 
@@ -153,7 +152,7 @@ class ResampleData(object):
         # re-initialise vols
         self._init_vols()
         self._define_index_xy()
-
+        
         if self._n_threads is 0:
             cores = max(1, mp.cpu_count() - 1)
         else:
@@ -197,7 +196,7 @@ class ResampleData(object):
 
         # write full 4D interp volume
         self._image_4d.set_data(self._img_4d)
-        self._write_resampled_data(self._image_resp_3d, self._write_paths.path_interpolated_4d())
+        self._write_resampled_data(self._image_4d, self._write_paths.path_interpolated_4d())
 
         # print function duration info
         print('%s duration: %.1fs' % ('_interp_rbf', (time.time() - t1)))

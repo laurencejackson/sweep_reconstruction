@@ -74,8 +74,8 @@ class ImageData(object):
     def get_fs(self):
         """Estimates the sampling frequency in Hz from the NIfTI header"""
         if self.nii.header['pixdim'][4] == 0:
-            print('No temporal pixel information - using defualt sampling frequency (1.2Hz)')
-            fs = 1.2
+            print('No temporal pixel information - using default sampling frequency (1.0Hz)')
+            fs = 1.0
         else:
             fs = 1 / self.nii.header['pixdim'][4]
         return fs

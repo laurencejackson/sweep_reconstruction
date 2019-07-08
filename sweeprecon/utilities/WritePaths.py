@@ -31,8 +31,6 @@ class WritePaths(object):
             if not os.path.exists(self._resp_vols_folder):
                 os.makedirs(self._resp_vols_folder)
 
-
-
     # path definition functions
     def path_sorted(self):
         return os.path.join(os.getcwd(),    # cwd
@@ -72,7 +70,6 @@ class WritePaths(object):
         return os.path.join(os.getcwd(),  # cwd
                             'IMG_4D_interpolated_' +
                             self._args.interpolator + '_' +
-                            str(self._args.kernel_dims) + 'D_kernel_' +
                             self.basename
                             )
 
