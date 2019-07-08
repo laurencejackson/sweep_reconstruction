@@ -5,7 +5,7 @@ Laurence Jackson, BME, KCL 2019
 """
 
 import os
-# limit threading to reduce cpu overhead in parallel processes
+# limit threading to reduce cpu overhead in parallel processes - must be done before importing num/scipy
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -53,7 +53,6 @@ class ResampleData(object):
         self._nstates = np.max(states)
         self._kernel_dims = kernel_dims
         self._n_threads = n_threads
-#
 
     def run(self):
         """Runs chosen re-sampling scheme """
