@@ -157,8 +157,9 @@ class ResampleData(object):
         else:
             cores = self._n_threads
 
-        print('Starting pool: %d processes' % cores)
-        pool = mp.Pool(cores)  # use half available cores - reduces cpu overhead
+        print('Starting pool [%d processes]' % cores)
+        pool = mp.Pool(cores)
+
         t1 = time.time()
 
         for ww in range(1, self._nstates + 1):
