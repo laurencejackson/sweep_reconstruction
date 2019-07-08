@@ -65,6 +65,15 @@ class ArgParser(object):
                        ):
         self._add_argument(dict(locals()))
 
+    def add_target_file(self,
+                       option_string=("-tt", "--target"),
+                       metavar='',
+                       help="path to target file",
+                       required=False,
+                       type=str
+                       ):
+        self._add_argument(dict(locals()))
+
     def add_slice_thickness(self,
                             option_string=("-z", "--thickness"),
                             metavar='',

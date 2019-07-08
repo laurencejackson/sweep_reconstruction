@@ -19,17 +19,11 @@ class WritePaths(object):
 
         # create output folders
         self._exclude_lists_folder = 'exclude_lists'
-        if not os.path.exists(self._exclude_lists_folder):
-            os.makedirs(self._exclude_lists_folder)
-
         self._resp_vols_linear_folder = '3D_respiration_volumes_linear'
-        if not os.path.exists(self._resp_vols_linear_folder):
-            os.makedirs(self._resp_vols_linear_folder)
+        self._patches_folder = 'patches'
 
-        if args.interpolator == 'rbf':
-            self._resp_vols_folder = '3D_respiration_volumes_rbf'
-            if not os.path.exists(self._resp_vols_folder):
-                os.makedirs(self._resp_vols_folder)
+        if args.interpolator is not 'fast_linear':
+            self._resp_vols_folder = '3D_respiration_volumes_' + str(args.interpolator)
 
     # path definition functions
     def path_sorted(self):
@@ -80,6 +74,8 @@ class WritePaths(object):
                             )
 
     def path_interpolated_3d_linear(self, resp_state):
+        if not os.path.exists(self._resp_vols_linear_folder):
+            os.makedirs(self._resp_vols_linear_folder)
         return os.path.join(os.getcwd(),  # cwd
                      self._resp_vols_linear_folder,
                      'IMG_3D_resp_' +
@@ -88,6 +84,8 @@ class WritePaths(object):
                      )
 
     def path_interpolated_3d(self, resp_state):
+        if not os.path.exists(self._resp_vols_folder):
+            os.makedirs(self._resp_vols_folder)
         return os.path.join(os.getcwd(),  # cwd
                      self._resp_vols_folder,
                      'IMG_3D_resp_' +
@@ -96,9 +94,49 @@ class WritePaths(object):
                      )
 
     def path_exclude_file(self, ww):
+        if not os.path.exists(self._exclude_lists_folder):
+            os.makedirs(self._exclude_lists_folder)
         return os.path.join(os.getcwd(),  # cwd
                             self._exclude_lists_folder,
                             'exclude_list_' +  # prefix
                             str(ww) +  # basename
                             '.txt'  # file ext
+                            )
+
+    def path_patch_img(self, xy, z, ww=0, target=False):
+
+        if not os.path.exists(self._patches_folder):
+            os.makedirs(self._patches_folder)
+        patch_folder = 'IMG_3D_patch_xy' + str(xy) + '_z' + str(z)
+        if not os.path.exists(os.path.join(os.getcwd(),self._patches_folder, patch_folder)):
+            os.makedirs(os.path.join(os.getcwd(),self._patches_folder, patch_folder))
+
+        if target:
+            resp_string = '_' + str(ww)
+            tgt_string = 'target_'
+        else:
+            resp_string = ''
+            tgt_string = ''
+
+        return os.path.join(os.getcwd(),  # cwd
+                            self._patches_folder,
+                            patch_folder,
+                            tgt_string +
+                            'IMG_3D_patch_xy' + str(xy) + '_z' + str(z) + resp_string +
+                            self._nii_ext
+                            )
+
+    def path_patch_txt(self, xy, z, ww):
+        if not os.path.exists(self._patches_folder):
+            os.makedirs(self._patches_folder)
+        patch_folder = 'IMG_3D_patch_xy' + str(xy) + '_z' + str(z)
+        if not os.path.exists(os.path.join(os.getcwd(),self._patches_folder, patch_folder)):
+            os.makedirs(os.path.join(os.getcwd(),self._patches_folder, patch_folder))
+        return os.path.join(os.getcwd(),  # cwd
+                            self._patches_folder,
+                            patch_folder,
+                            'IMG_3D_patch_xy' + str(xy) + '_z' + str(z) +
+                            '_excludes_' +
+                            str(ww) +
+                            '.txt'
                             )

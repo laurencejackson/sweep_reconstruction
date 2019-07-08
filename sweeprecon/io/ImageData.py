@@ -4,7 +4,6 @@ Input parser for command line operation
 Laurence Jackson, BME, KCL 2019
 """
 
-import os
 import nibabel as nib
 import numpy as np
 
@@ -80,7 +79,7 @@ class ImageData(object):
             fs = 1 / self.nii.header['pixdim'][4]
         return fs
 
-    def square_crop(self, rect=None, crop_z=None):
+    def square_crop(self, rect=None, crop_z=None, crop_t=None):
         """
         Crops image data in xyz and modifies header transform to preserve geometry
         :param rect: 2x2 matrix defining dx and dy
@@ -91,6 +90,9 @@ class ImageData(object):
         if rect is None:
             print("Cropping region not defined - no crop performed")
             return
+
+        if crop_t is not None:
+            self.set_data(self.img[:, :, :, crop_t])
 
         # define xy cropping region
         dx = rect[1, 0] - rect[0, 0]
