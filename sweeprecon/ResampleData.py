@@ -68,8 +68,6 @@ class ResampleData(object):
         print('Re-sampling method: %s' % self._interp_method)
         if self._interp_method == 'rbf':
             self._interp_rbf()
-        else:
-            raise Exception('\nInvalid data re-sampling method: %s\n' % self._interp_method)
 
     def _write_resampled_data(self, image_obj, path):
         """Saves re-sampled image"""
