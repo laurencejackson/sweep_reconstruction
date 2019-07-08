@@ -76,7 +76,7 @@ class EstimateRespiration(object):
         self._sum_mask_data()
         self._gpr_filter()
 
-    def _auto_crop(self, resp_min=0.2, resp_max=0.4, crop_fraction=0.4):
+    def _auto_crop(self, resp_min=0.15, resp_max=0.4, crop_fraction=0.4):
         """
         Finds the best region to crop the image based on the respiratory content of the image
         :param resp_min: lower band of respiration frequency
