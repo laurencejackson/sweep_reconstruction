@@ -117,7 +117,7 @@ class WritePaths(object):
             self.patch_dir_list.append(os.path.join(os.getcwd(), self._patches_folder, patch_folder))
 
         if target:
-            resp_string = '_' + str(ww)
+            resp_string = '_' + str(ww + 1)
             tgt_string = 'target_'
         else:
             resp_string = ''
@@ -142,7 +142,7 @@ class WritePaths(object):
                             patch_folder,
                             'IMG_3D_patch_xy' + str(xy) + '_z' + str(z) +
                             '_excludes_' +
-                            str(ww + 1) +
+                            str(ww) +
                             '.txt'
                             )
 
