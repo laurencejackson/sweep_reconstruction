@@ -90,7 +90,7 @@ class Reconstruction(object):
             opts_string += string_val
 
         # parse argument string
-        command_string = str('%s %s %d %s -template %s %s %s' % (function_path, output_path, nstacks, source_path,
+        command_string = str('%s %s %d %s -template %s -excluded_file %s %s' % (function_path, output_path, nstacks, source_path,
                                                                  target_path, exclude_path, opts_string))
         print(command_string)
         process = Popen(command_string, stdout=PIPE, stderr=PIPE)
