@@ -142,7 +142,7 @@ class WritePaths(object):
                             patch_folder,
                             'IMG_3D_patch_xy' + str(xy) + '_z' + str(z) +
                             '_excludes_' +
-                            str(ww) +
+                            str(ww + 1) +
                             '.txt'
                             )
 
