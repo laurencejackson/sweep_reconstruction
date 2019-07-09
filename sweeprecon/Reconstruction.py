@@ -4,8 +4,10 @@ Class containing data and functions for reconstructing image data.
 Laurence Jackson, BME, KCL 2019
 """
 
+import os
 import copy
 import numpy as np
+from subprocess import Popen, PIPE
 
 
 class Reconstruction(object):
@@ -16,6 +18,7 @@ class Reconstruction(object):
                  target,
                  write_paths,
                  states,
+                 args,
                  patches=True):
         """
         Initialise reconstruction object
@@ -29,6 +32,7 @@ class Reconstruction(object):
         self._write_paths = write_paths
         self._states = states
         self._patches = patches
+        self._args = args
 
     def run(self):
         """Runs reconstruction pipeline"""
@@ -37,10 +41,84 @@ class Reconstruction(object):
             self._extract_patches(self._image, target=False)
             self._extract_patches(self._target, target=True)
 
-        # perform first SVR phase
-        
-        # perform 2nd SVR phase (all slices)
+        # perform first SVR pass
+        self._svr_options_init()
+        print('performing 1st SVR pass')
 
+        # TODO read more opts from args
+
+        # loop over resp states
+        opts = {
+            'thickness': self._args['thickness'],
+        }
+
+        function_path = 'reconstructAngio'
+        nstacks = 1  # likely to only work with one but I'll make this a variable anyway
+
+        for ww in range(1, np.max(self._states) + 1):
+            # loop over patches
+            for source_dir in self._write_paths.patch_dir_list:
+
+                basename = os.path.basename(os.path.normpath(source_dir))
+                output_path = os.path.join(self._write_paths.path_patch_recon(basename, ww))
+                source_path = os.path.join(source_dir, basename + '.nii.gz')
+                exclude_path = os.path.join(source_dir, basename + '_excludes_' + str(ww) + '.txt')
+                target_path = os.path.join(source_dir, 'target_' + basename + '_' + str(ww) + '.nii.gz')
+
+                self._perform_svr(function_path, output_path, nstacks, source_path,
+                                  target_path, exclude_path, opts=opts)
+
+    def _perform_svr(self, function_path, output_path, nstacks, source_path, target_path, exclude_path, opts=None):
+        """Co-registers slices from source to slice in target"""
+
+        # update options dict with given values
+        if opts is not None:
+            for key, value in opts.items():
+                self._svr_opts[key] = value
+
+        # parse options string
+        opts_string = ''
+        for key, value in self._svr_opts.items():
+            if type(value) is bool:
+                if value is True:
+                    string_val = '-' + str(key) + ' '
+                else:
+                    continue
+            else:
+                string_val = '-' + str(key) + ' ' + str(value) + ' '
+
+            opts_string += string_val
+
+        # parse argument string
+        command_string = str('%s %s %d %s -template %s %s %s' % (function_path, output_path, nstacks, source_path,
+                                                                 target_path, exclude_path, opts_string))
+        print(command_string)
+        process = Popen(command_string, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        process.wait()
+        print('Function returned stdout: %d stderr: %d' % (stdout, stderr))
+
+
+    def _svr_options_init(self):
+        """Initialise SVR options with defaults"""
+
+        self._svr_opts = {
+            "iterations": 3,
+            "thickness": 2.5,
+            "resolution": 1.0,
+            "sr_iterations": 3,
+            "filter": 10,
+            "lastIter": 0.03,
+            "delta": 400,
+            "lambda": 0.035,
+
+            "gaussian_only": True,
+            "svr_only": True,
+            "no_intensity_matching": True,
+            "no_sr": False,
+            "no_robust_statistics": True,
+            "reg_log": False,
+        }
 
     def _extract_patches(self, image, patch_size=None, patch_stride=None, target=False):
         """Extracts 2D patches with overlap and preserved geometry as NIfTI files"""
@@ -55,7 +133,7 @@ class Reconstruction(object):
 
         for patch_ind in range(rect_list.shape[0]):
             crop_rect = np.array([[rect_list[patch_ind, 0], rect_list[patch_ind, 1]],
-                              [rect_list[patch_ind, 2], rect_list[patch_ind, 3]]]).astype(int)
+                                 [rect_list[patch_ind, 2], rect_list[patch_ind, 3]]]).astype(int)
 
             for zz in range(zlist.shape[0]):
                 if target:  # loop
@@ -68,7 +146,7 @@ class Reconstruction(object):
                     temp_image.square_crop(rect=crop_rect)
                     temp_image.write_nii(self._write_paths.path_patch_img(patch_ind, zz, target=target))
 
-                    for ww in range(1,  max(self._states) + 1):
+                    for ww in range(1,  np.max(self._states) + 1):
                         slice_idx = np.where((self._states != ww) &
                                              (self._states != 0) &
                                              (range(0, temp_image.img.shape[2]) >= zlist[zz, 0]) &

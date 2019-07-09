@@ -16,11 +16,13 @@ class WritePaths(object):
         self._nii_ext = '.nii.gz'
         self.state = 0
         self._args = args
+        self.patch_dir_list = []
 
         # create output folders
         self._exclude_lists_folder = 'exclude_lists'
         self._resp_vols_linear_folder = '3D_respiration_volumes_linear'
         self._patches_folder = 'patches'
+        self._recon_folder = 'RECON'
 
         if args.interpolator is not 'fast_linear':
             self._resp_vols_folder = '3D_respiration_volumes_' + str(args.interpolator)
@@ -108,8 +110,11 @@ class WritePaths(object):
         if not os.path.exists(self._patches_folder):
             os.makedirs(self._patches_folder)
         patch_folder = 'IMG_3D_patch_xy' + str(xy) + '_z' + str(z)
-        if not os.path.exists(os.path.join(os.getcwd(),self._patches_folder, patch_folder)):
-            os.makedirs(os.path.join(os.getcwd(),self._patches_folder, patch_folder))
+        if not os.path.exists(os.path.join(os.getcwd(), self._patches_folder, patch_folder)):
+            os.makedirs(os.path.join(os.getcwd(), self._patches_folder, patch_folder))
+
+        if os.path.join(os.getcwd(), self._patches_folder, patch_folder) not in self.patch_dir_list:
+            self.patch_dir_list.append(os.path.join(os.getcwd(), self._patches_folder, patch_folder))
 
         if target:
             resp_string = '_' + str(ww)
@@ -130,8 +135,8 @@ class WritePaths(object):
         if not os.path.exists(self._patches_folder):
             os.makedirs(self._patches_folder)
         patch_folder = 'IMG_3D_patch_xy' + str(xy) + '_z' + str(z)
-        if not os.path.exists(os.path.join(os.getcwd(),self._patches_folder, patch_folder)):
-            os.makedirs(os.path.join(os.getcwd(),self._patches_folder, patch_folder))
+        if not os.path.exists(os.path.join(os.getcwd(), self._patches_folder, patch_folder)):
+            os.makedirs(os.path.join(os.getcwd(), self._patches_folder, patch_folder))
         return os.path.join(os.getcwd(),  # cwd
                             self._patches_folder,
                             patch_folder,
@@ -139,4 +144,18 @@ class WritePaths(object):
                             '_excludes_' +
                             str(ww) +
                             '.txt'
+                            )
+
+    def path_patch_recon(self, basename, ww):
+        if not os.path.exists(self._recon_folder):
+            os.makedirs(self._recon_folder)
+        if not os.path.exists(os.path.join(os.getcwd(), self._recon_folder, basename)):
+            os.makedirs(os.path.join(os.getcwd(), self._recon_folder, basename))
+        return os.path.join(os.getcwd(),  # cwd
+                            self._recon_folder,
+                            basename,
+                            'RECON_' +
+                            basename +
+                            str(ww) +
+                            self._nii_ext
                             )
