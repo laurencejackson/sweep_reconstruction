@@ -7,7 +7,7 @@ Laurence Jackson, BME, KCL 2019
 import os
 import copy
 import numpy as np
-from subprocess import Popen, PIPE
+import subprocess
 
 
 class Reconstruction(object):
@@ -93,10 +93,7 @@ class Reconstruction(object):
         command_string = str('%s %s %d %s -template %s -excluded_file %s %s' % (function_path, output_path, nstacks, source_path,
                                                                  target_path, exclude_path, opts_string))
         print(command_string)
-        process = Popen(command_string, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = process.communicate()
-        process.wait()
-        print('Function returned stdout: %d stderr: %d' % (stdout, stderr))
+        subprocess.call(command_string)
 
 
     def _svr_options_init(self):
