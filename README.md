@@ -20,9 +20,9 @@ The pipeline performs the following functions.
 ### Example
 The software takes as an input a dense stack of rapid-acquisition 2D images that are acquired fast enough to freeze in plane motion, but suffer from motion corruption in the through plane direction.
 
-An example reconstruction using this software is given below. The data shows a rapid 2D bSSFP acquisition utilising the SWEEP method for fetal/placental imaging. The figure below shows how the method is able to effectively correct for respiration induced motion and recover the temporal information (maternal respiration) while suppressing motion artefacts. 
+An example reconstruction using this software is given below. The data shows a rapid 2D SPGR acquisition utilising the SWEEP method for fetal/placental angiography. The figure below shows how the method is able to effectively correct for respiration induced motion to improve vessel clarity. 
 
-<p align="center"><img width="700" src="./data/figures/results.png"></p>
+<p align="center"><img width="800" src="./data/figures/results.png"></p>
 
 ## Installation
 The code was developed in python 3.5 on a windows machine running [Anaconda](https://www.anaconda.com/) and makes us of a number of 3rd party libraries (see requirements.txt), it is necessary to install these before running the code. 
@@ -52,7 +52,7 @@ python -m pip install -r requirements.txt
 ## Usage
 The code is written in a modular fashion. The full pipeline can be performed by running the `__main.__.py` function, or by pointing the python interpreter to the directory e.g. `python /path/to/sweep_reconstruction`. Alternatively, the three individual stages of the pipeline described above can be run through the `run_<function_name>.py ` scripts in the root directory. 
 
-An example dataset is included in `data/example_SWEEP_data.nii.gz` to demonstrate the function of the code.
+An example image stack is included in `data/example_data.nii.gz` to demonstrate the function of the code. This image is a substack of the example given above.
 
 Note that when the code runs it saves output images and log data to the current working directory, so make sure you navigate to a location where you wish to save the output. 
 
@@ -88,11 +88,11 @@ path_to_repo='~/sweep_reconstruction' # edit to match path to cloned repo
 mkdir sweep_test_dir/test_data
 
 # copy data and navigate to directory
-cp ${path_to_repo}/data/example_SWEEP_data.nii.gz ~/sweep_test_dir/test_data/example_SWEEP_data.nii.gz
+cp ${path_to_repo}/data/example_data.nii.gz ~/sweep_test_dir/test_data/example_data.nii.gz
 cd sweep_test_dir
 
 # run
-python ${path_to_repo} -i test_data/example_SWEEP_data.nii.gz
+python ${path_to_repo} -i test_data/example_data.nii.gz
 ~~~~
 Note that the code is capable of parallel execution on multi-core CPUs. By default this runs on N = cpu_count - 1 cores to allow the code to run in the background if running the code remotely where this is not important then modify the `cores` variable in ResampleData and EstimateRespiration to use all available threads.
 
@@ -121,11 +121,11 @@ path_to_repo='~/sweep_reconstruction' # edit to match path to cloned repo
 mkdir sweep_test_dir/test_data
 
 # copy data and navigate to directory
-cp ${path_to_repo}/data/example_SWEEP_data.nii.gz ~/sweep_test_dir/test_data/example_SWEEP_data.nii.gz
+cp ${path_to_repo}/data/example_data.nii.gz ~/sweep_test_dir/test_data/example_data.nii.gz
 cd sweep_test_dir
 
 # run
-python ${path_to_repo}/run_sort_image_data.p -i test_data/example_SWEEP_data.nii.gz
+python ${path_to_repo}/run_sort_image_data.p -i test_data/example_data.nii.gz
 ~~~~
 
 ## License
