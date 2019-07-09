@@ -95,7 +95,6 @@ class Reconstruction(object):
         print(command_string)
         subprocess.call(command_string)
 
-
     def _svr_options_init(self):
         """Initialise SVR options with defaults"""
 
@@ -105,9 +104,6 @@ class Reconstruction(object):
             "resolution": 1.0,
             "sr_iterations": 3,
             "filter": 10,
-            "lastIter": 0.03,
-            "delta": 400,
-            "lambda": 0.035,
 
             "gaussian_only": True,
             "svr_only": True,
