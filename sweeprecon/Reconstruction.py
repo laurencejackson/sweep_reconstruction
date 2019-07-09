@@ -49,7 +49,7 @@ class Reconstruction(object):
 
         # loop over resp states
         opts = {
-            'thickness': self._args['thickness'],
+            'thickness': self._args.thickness,
         }
 
         function_path = 'reconstructAngio'

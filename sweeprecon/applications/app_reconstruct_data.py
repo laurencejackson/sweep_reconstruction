@@ -34,6 +34,7 @@ def app_reconstruct_data(pipeline=False):
 
         # optional
         input_vars.add_flag_redo(required=False)
+        input_vars.add_slice_thickness(required=False)
         input_vars.add_n_threads(required=False)
         input_vars.add_interpolator(required=False)
 
@@ -63,7 +64,8 @@ def app_reconstruct_data(pipeline=False):
     reconstructor = Reconstruction(image,
                                    target,
                                    write_paths,
-                                   logger.log.resp_states
+                                   logger.log.resp_states,
+                                   args
                                    )
 
     # run re-sampling
