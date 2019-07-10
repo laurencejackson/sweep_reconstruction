@@ -48,13 +48,14 @@ class Reconstruction(object):
         # TODO read more opts from args
 
         # loop over resp states
-        opts = {
-            'thickness': self._args.thickness,
-        }
+        opts = {'thickness': self._args.thickness}
+        self._process_patches(self, 'reconstructAngio', opts)
 
-        function_path = 'reconstructAngio'
+    def _process_patches(self, function_path, opts):
+        """Loop over patch directory structure and apply function"""
+
+        # loop over resp states
         nstacks = 1  # likely to only work with one but I'll make this a variable anyway
-
         for ww in range(1, np.max(self._states) + 1):
             # loop over patches
             for source_dir in self._write_paths.patch_dir_list:
@@ -99,13 +100,16 @@ class Reconstruction(object):
         """Initialise SVR options with defaults"""
 
         self._svr_opts = {
-            "iterations": 3,
+            "iterations": 1,
             "thickness": 2.5,
             "resolution": 1.0,
             "sr_iterations": 3,
             "filter": 10,
+            "lastIter": 0.03,
+            "delta": 400,
+            "lambda": 0.035,
 
-            "gaussian_only": True,
+            "gaussian_only": False,
             "svr_only": True,
             "no_intensity_matching": True,
             "no_sr": False,
