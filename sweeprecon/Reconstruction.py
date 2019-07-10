@@ -49,7 +49,7 @@ class Reconstruction(object):
 
         # loop over resp states
         opts = {'thickness': self._args.thickness}
-        self._process_patches(self, 'reconstructAngio', opts)
+        self._process_patches('reconstructAngio', opts)
 
     def _process_patches(self, function_path, opts):
         """Loop over patch directory structure and apply function"""
