@@ -91,8 +91,12 @@ class Reconstruction(object):
             opts_string += string_val
 
         # parse argument string
-        command_string = str('%s %s %d %s -template %s -excluded_file %s %s' % (function_path, output_path, nstacks, source_path,
-                                                                 target_path, exclude_path, opts_string))
+        #command_string = str('%s %s %d %s -template %s -excluded_file %s %s' % (function_path, output_path, nstacks, source_path,
+        #                                                         target_path, exclude_path, opts_string))
+        print('Registering all slices')
+        command_string = str(
+            '%s %s %d %s -template %s %s' % (function_path, output_path, nstacks, source_path,
+                                                               target_path, opts_string))
         print(command_string)
         subprocess.run(command_string.split())
 
