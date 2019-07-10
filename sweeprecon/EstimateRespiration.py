@@ -142,24 +142,30 @@ class EstimateRespiration(object):
         self._image_initialised.set_data(ac_mask)
         self._image_initialised.write_nii(self._write_paths.path_initialised_contours())
 
-    def _refine_boundaries(self):
+    def _refine_boundaries(self, method='cv'):
         """Refines body area estimates using Chan-Vese active contour model"""
 
-        # filter/pre-process image
-        filtered_image = self._process_slices_parallel(self._filter_denoise,
-                                                       self._image.img,
-                                                       cores=self._n_threads)
-
-        filtered_image = self._process_slices_parallel(self._filter_inv_gauss,
-                                                       filtered_image,
-                                                       cores=self._n_threads)
-
-        # save filtered image
-        self._image_refined.set_data(filtered_image)
-        self._image_refined.write_nii(self._write_paths.path_filtered_contours())
-
         # refine segmentation
-        refined_contours = self._process_slices_parallel(self._segment_gac,
+        if method is 'cv':
+            filtered_image = self._process_slices_parallel(self._filter_denoise,
+                                                           self._image.img,
+                                                           cores=self._n_threads)
+
+            refined_contours = self._process_slices_parallel(self._segment_cv,
+                                                             filtered_image,
+                                                             self._image_initialised.img,
+                                                             cores=self._n_threads)
+        elif method is 'gac':
+            # filter/pre-process image
+            filtered_image = self._process_slices_parallel(self._filter_denoise,
+                                                           self._image.img,
+                                                           cores=self._n_threads)
+
+            filtered_image = self._process_slices_parallel(self._filter_inv_gauss,
+                                                           filtered_image,
+                                                           cores=self._n_threads)
+
+            refined_contours = self._process_slices_parallel(self._segment_gac,
                                                          filtered_image,
                                                          self._image_initialised.img,
                                                          cores=self._n_threads)
@@ -205,48 +211,48 @@ class EstimateRespiration(object):
     # __________________________ Static Methods__________________________
 
     @ staticmethod
-    def _filter_median(imgs, kernel_size=5):
+    def _filter_median(img, kernel_size=5):
         """
         Median filter
         :param imgs: slice to filter [2D]
         :param kernel_size: size of median kernel
         :return:
         """
-        return medfilt2d(imgs, [kernel_size, kernel_size])  # median filter more robust to bands in balanced images
+        return medfilt2d(img, [kernel_size, kernel_size])  # median filter more robust to bands in balanced images
 
     @staticmethod
-    def _filter_denoise(imgs, weight=0.003):
+    def _filter_denoise(img, weight=0.003):
         """
         TV denoising
         :param imgs: slice to denoise [2D]
         :param weight: TV weight
         :return:
         """
-        return restoration.denoise_tv_bregman(imgs, weight=weight)
+        return restoration.denoise_tv_bregman(img, weight=weight)
 
     @staticmethod
-    def _filter_inv_gauss(imgs, alpha=10, sigma=1.5):
+    def _filter_inv_gauss(img, alpha=10, sigma=1.5):
         """
         TV denoising
         :param imgs: slice to denoise [2D]
         :param weight: TV weight
         :return:
         """
-        return segmentation.inverse_gaussian_gradient(imgs, alpha=alpha, sigma=sigma)
+        return segmentation.inverse_gaussian_gradient(img, alpha=alpha, sigma=sigma)
 
     @staticmethod
-    def _segment_cv(imgs, iterations=200):
+    def _segment_cv(img, init_level_set, iterations=200):
         """
         refines initial segmentation contours using chan vese segmentation model
         :param imgs: list of 2 images [2D] imgs[0] = slice to segment: imgs[1] = initial level set
         :param iterations: number of refinement iterations
         :return:
         """
-        return segmentation.morphological_chan_vese(imgs[0],
+        return segmentation.morphological_chan_vese(img,
                                                     iterations,
-                                                    init_level_set=imgs[1],
-                                                    smoothing=2,
-                                                    lambda1=1.5,
+                                                    init_level_set=init_level_set,
+                                                    smoothing=8,
+                                                    lambda1=2.5,
                                                     lambda2=0.5
                                                     )
 
