@@ -142,10 +142,11 @@ class EstimateRespiration(object):
         self._image_initialised.set_data(ac_mask)
         self._image_initialised.write_nii(self._write_paths.path_initialised_contours())
 
-    def _refine_boundaries(self, method='cv'):
+    def _refine_boundaries(self, method='gac'):
         """Refines body area estimates using Chan-Vese active contour model"""
 
         # refine segmentation
+        print('Contour refinement method: %s' % method)
         if method is 'cv':
             filtered_image = self._process_slices_parallel(self._filter_denoise,
                                                            self._image.img,
@@ -231,7 +232,7 @@ class EstimateRespiration(object):
         return restoration.denoise_tv_bregman(img, weight=weight)
 
     @staticmethod
-    def _filter_inv_gauss(img, alpha=10, sigma=1.5):
+    def _filter_inv_gauss(img, alpha=10, sigma=1.2):
         """
         TV denoising
         :param imgs: slice to denoise [2D]
