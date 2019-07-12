@@ -25,7 +25,7 @@ An example reconstruction using this software is given below. The data shows a r
 <p align="center"><img width="800" src="./data/figures/results.png"></p>
 
 ## Installation
-The code was developed in python 3.5 on a windows machine running [Anaconda](https://www.anaconda.com/) and makes us of a number of 3rd party libraries (see requirements.txt), it is necessary to install these before running the code. 
+The code was developed in python 3.5 on a windows machine running [Anaconda](https://www.anaconda.com/) and makes use of a number of 3rd party libraries (see requirements.txt), it is necessary to install these before running the code. 
 
 To view the output an image viewer which preserves NIfTI geometry is required - I recommend [MITK workbench](http://mitk.org/wiki/Downloads)
 
