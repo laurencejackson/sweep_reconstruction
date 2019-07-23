@@ -111,13 +111,14 @@ class Reconstruction(object):
         self._svr_opts = {
             "iterations": 1,
             "thickness": 2.5,
-            "resolution": 1.0,
-            "sr_iterations": 3,
+            "resolution": 0.75,
+            "sr_iterations": 4,
             "filter": 10,
             "lastIter": 0.03,
             "delta": 400,
             "lambda": 0.035,
 
+            "ncc": True,
             "ffd": True,
             "gaussian_only": False,
             "svr_only": True,
