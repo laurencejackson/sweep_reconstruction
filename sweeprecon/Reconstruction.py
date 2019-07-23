@@ -52,7 +52,7 @@ class Reconstruction(object):
         self._process_patches('reconstructAngio', opts)
 
         # recombine patches
-        self._recombine_paths()
+        self._recombine_patches()
 
     def _process_patches(self, function_path, opts):
         """Loop over patch directory structure and apply function"""
@@ -118,6 +118,7 @@ class Reconstruction(object):
             "delta": 400,
             "lambda": 0.035,
 
+            "ffd": True,
             "gaussian_only": False,
             "svr_only": True,
             "no_intensity_matching": True,

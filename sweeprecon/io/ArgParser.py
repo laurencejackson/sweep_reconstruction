@@ -19,7 +19,7 @@ class ArgParser(object):
         # initialise _parser object
         self._parser = argparse.ArgumentParser(**kwargs)
 
-        # Create group for named required arguments so thesargparse.ArgumentParsere are listed separately
+        # Create group for named required arguments listed separately
         self._parser_req = self._parser.add_argument_group('required arguments')
 
     @staticmethod

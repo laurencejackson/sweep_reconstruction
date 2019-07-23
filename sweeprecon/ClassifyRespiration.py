@@ -42,8 +42,8 @@ class ClassifyRespiration(object):
 
         xx = np.linspace(0, len(self._resp_trace) - 1, len(self._resp_trace))
 
-        conn_pos = np.interp(xx, peaks_pos, self._resp_trace[peaks_pos] + (0.3 * self._resp_trace[peaks_pos]))
-        conn_neg = np.interp(xx, peaks_neg, self._resp_trace[peaks_neg] + (0.3 * self._resp_trace[peaks_neg]))
+        conn_pos = np.interp(xx, peaks_pos, self._resp_trace[peaks_pos] + (0.5 * self._resp_trace[peaks_pos]))
+        conn_neg = np.interp(xx, peaks_neg, self._resp_trace[peaks_neg] + (0.5 * self._resp_trace[peaks_neg]))
 
         smooth = len(self._resp_trace) * 30e-5
         lim_pos = lowess(conn_pos, xx, is_sorted=True, frac=smooth)[:, 1]
