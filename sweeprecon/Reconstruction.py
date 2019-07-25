@@ -103,6 +103,7 @@ class Reconstruction(object):
 
     def _recombine_patches(self):
         """Recombines patches to common space"""
+
         pass
 
     def _svr_options_init(self):

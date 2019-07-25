@@ -42,7 +42,7 @@ class EstimateRespiration(object):
         self._resp_method = method
         self._plot_figures = plot_figures
         self._disable_crop_data = disable_crop_data
-        self._crop_fraction = 0.12
+        self._crop_fraction = 0.5
 
         self.resp_raw = None
         self.resp_trend = None
@@ -75,7 +75,7 @@ class EstimateRespiration(object):
         self._sum_mask_data()
         self._gpr_filter()
 
-    def _auto_crop(self, resp_min=0.15, resp_max=0.4, crop_fraction=0.4):
+    def _auto_crop(self, resp_min=0.15, resp_max=0.4):
         """
         Finds the best region to crop the image based on the respiratory content of the image
         :param resp_min: lower band of respiration frequency
@@ -99,9 +99,9 @@ class EstimateRespiration(object):
         freqs = np.fft.fftshift(np.fft.fftfreq(sz[2], 1 / fs))
         respii = np.where((freqs > resp_min) & (freqs < resp_max))
         respspectrum = np.sum(freqmat[:, respii[0]], axis=1)
-        respspectrum_c = np.convolve(respspectrum, np.ones(int(sz[0] * (crop_fraction * 1.2))), mode='same')
+        respspectrum_c = np.convolve(respspectrum, np.ones(int(sz[0] * (self._crop_fraction * 1.2))), mode='same')
         centerline = np.argmax(respspectrum_c)
-        width = int(sz[0] * crop_fraction * 0.5)
+        width = int(sz[0] * self._crop_fraction * 0.5)
 
         if self._plot_figures:
             PlotFigures.plot_respiration_frequency(freqmat, respii, freqs, centerline, width, sz)
@@ -232,7 +232,7 @@ class EstimateRespiration(object):
         return restoration.denoise_tv_bregman(img, weight=weight)
 
     @staticmethod
-    def _filter_inv_gauss(img, alpha=10, sigma=1.2):
+    def _filter_inv_gauss(img, alpha=12, sigma=1.1):
         """
         TV denoising
         :param imgs: slice to denoise [2D]
@@ -242,7 +242,7 @@ class EstimateRespiration(object):
         return segmentation.inverse_gaussian_gradient(img, alpha=alpha, sigma=sigma)
 
     @staticmethod
-    def _segment_cv(img, init_level_set, iterations=200):
+    def _segment_cv(img, init_level_set, iterations=100):
         """
         refines initial segmentation contours using chan vese segmentation model
         :param img: slice to segment:
@@ -253,7 +253,7 @@ class EstimateRespiration(object):
         return segmentation.morphological_chan_vese(img,
                                                     iterations,
                                                     init_level_set=init_level_set,
-                                                    smoothing=8,
+                                                    smoothing=9,
                                                     lambda1=2.5,
                                                     lambda2=0.5
                                                     )
