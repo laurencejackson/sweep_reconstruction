@@ -42,7 +42,7 @@ class EstimateRespiration(object):
         self._resp_method = method
         self._plot_figures = plot_figures
         self._disable_crop_data = disable_crop_data
-        self._crop_fraction = 0.5
+        self._crop_fraction = 0.3
 
         self.resp_raw = None
         self.resp_trend = None
