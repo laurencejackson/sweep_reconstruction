@@ -42,7 +42,7 @@ class EstimateRespiration(object):
         self._resp_method = method
         self._plot_figures = plot_figures
         self._disable_crop_data = disable_crop_data
-        self._crop_fraction = 0.5
+        self._crop_fraction = 0.4
 
         self.resp_raw = None
         self.resp_trend = None
@@ -197,7 +197,7 @@ class EstimateRespiration(object):
         """Removes low frequency global change sin body area to extract respiration trace only"""
 
         # define GPR kernel
-        kernel = 1.0 * RBF(length_scale=5.0, length_scale_bounds=(2, 20)) \
+        kernel = 1.0 * RBF(length_scale=8.0, length_scale_bounds=(4, 20)) \
                  + WhiteKernel(noise_level=50, noise_level_bounds=(10, 1e+3))
 
         # fit GPR model
