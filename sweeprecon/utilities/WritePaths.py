@@ -21,11 +21,10 @@ class WritePaths(object):
         # create output folders
         self._exclude_lists_folder = 'exclude_lists'
         self._resp_vols_linear_folder = '3D_respiration_volumes_linear'
+        self._resp_vols_folder = '3D_respiration_volumes_' + str(args.interpolator)
         self._patches_folder = 'patches'
         self._recon_folder = 'RECON'
 
-        if args.interpolator is not 'fast_linear':
-            self._resp_vols_folder = '3D_respiration_volumes_' + str(args.interpolator)
 
     # path definition functions
     def path_sorted(self):

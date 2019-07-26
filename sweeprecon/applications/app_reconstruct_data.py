@@ -37,6 +37,7 @@ def app_reconstruct_data(pipeline=False):
         input_vars.add_slice_thickness(required=False)
         input_vars.add_n_threads(required=False)
         input_vars.add_interpolator(required=False)
+        input_vars.add_flag_no_resp_recon(required=False)
 
         # parse
         args = input_vars.parse_args()

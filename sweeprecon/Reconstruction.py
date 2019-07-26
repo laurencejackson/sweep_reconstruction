@@ -33,6 +33,9 @@ class Reconstruction(object):
         self._states = states
         self._patches = patches
         self._args = args
+        self._target_list = []
+        self._patch_list = []
+        self._recon_patch_list = []
 
     def run(self):
         """Runs reconstruction pipeline"""
@@ -43,23 +46,22 @@ class Reconstruction(object):
 
         # perform first SVR pass
         self._svr_options_init()
-        print('performing 1st SVR pass')
 
         # TODO read more opts from args
-
-        # loop over resp states
         opts = {'thickness': self._args.thickness}
         self._process_patches('reconstructAngio', opts)
 
         # recombine patches
-        self._recombine_patches()
+        self._recombine_patches('combine_patches')
 
     def _process_patches(self, function_path, opts):
         """Loop over patch directory structure and apply function"""
 
         # loop over resp states
         nstacks = 1  # likely to only work with one but I'll make this a variable anyway
-        for ww in range(1, np.max(self._states) + 1):
+        self._set_resp_range()
+
+        for ww in self.resp_range:
             # loop over patches
             for source_dir in self._write_paths.patch_dir_list:
 
@@ -68,6 +70,8 @@ class Reconstruction(object):
                 source_path = os.path.join(source_dir, basename + '.nii.gz')
                 exclude_path = os.path.join(source_dir, basename + '_excludes_' + str(ww) + '.txt')
                 target_path = os.path.join(source_dir, 'target_' + basename + '_' + str(ww) + '.nii.gz')
+
+                self._recon_patch_list.append(output_path)
 
                 self._perform_svr(function_path, output_path, nstacks, source_path,
                                   target_path, exclude_path, opts=opts)
@@ -101,10 +105,19 @@ class Reconstruction(object):
         print(command_string)
         subprocess.run(command_string.split())
 
-    def _recombine_patches(self):
+    def _recombine_patches(self, function_path):
         """Recombines patches to common space"""
+        # combine_patches
+        # Usage: combine_patches[target_volume][output_resolution][N][stack_1]..[stack_N]
+        command_string_1 = str('%s %s %f %d' % (function_path,
+                                                self._write_paths.path_interpolated_3d(1),
+                                                self._svr_opts['resolution'],
+                                                self._npatches))
 
-        pass
+        command_string = command_string_1 + ' ' + ' '.join(self._recon_patch_list)
+        print(command_string)
+        # combine patches
+        subprocess.run(command_string.split())
 
     def _svr_options_init(self):
         """Initialise SVR options with defaults"""
@@ -138,6 +151,7 @@ class Reconstruction(object):
             patch_stride = (patch_size * 0.3).astype(int)
 
         rect_list = self._patch_list_xy(image.img.shape, patch_size, patch_stride)
+        self._npatches = rect_list.shape[0]
         zlist, zsegs = self._patch_list_dim(image.img.shape[2], patch_size[2], patch_stride[2])
 
         for patch_ind in range(rect_list.shape[0]):
@@ -178,6 +192,16 @@ class Reconstruction(object):
                 rect_list[(xi * ysegs) + yi, :] = [xlist[xi, 0], ylist[yi, 0], xlist[xi, 1], ylist[yi, 1]]
 
         return rect_list
+
+    def _set_resp_range(self):
+        """defines which resp states are reconstructed (all | the most dense)"""
+        if self._args.no_resp_recon:
+            counts = np.bincount(self._states)  # how many slices in each state (including zero)
+            mode_state = np.argmax(counts[1:]) + 1  # get most frequent bin +1 (excluding zero)
+            self.resp_range = range(mode_state, mode_state+1)
+            print('Reconstructing only state: %d' % mode_state.astype(int))
+        else:
+            self.resp_range = range(1, np.max(self._states) + 1)
 
     @ staticmethod
     def _patch_list_dim(dim_size, patch_size, stride):

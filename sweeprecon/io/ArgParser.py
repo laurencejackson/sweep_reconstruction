@@ -132,6 +132,15 @@ class ArgParser(object):
                       ):
         self._add_argument(dict(locals()))
 
+    def add_flag_no_resp_recon(self,
+                               option_string=("-nrr", "--no_resp_recon"),
+                               action='store_true',
+                               help="reconstruct only the most dense respiration state",
+                               required=False,
+                               default=False,
+                               ):
+        self._add_argument(dict(locals()))
+
     def add_flag_disable_resp_crop(self,
                                    option_string=("-c", "--disable_crop"),
                                    action='store_false',
