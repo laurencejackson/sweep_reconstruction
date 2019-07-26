@@ -181,7 +181,8 @@ class EstimateRespiration(object):
         # crop refined boundaries to avoid edge effects
         self._image_refined.set_data(refined_contours)
 
-        cropval = int(self._crop_fraction * refined_contours.shape[1])
+        # take 10% off upper and lower edges
+        cropval = int(0.1 * refined_contours.shape[1])
         rect = np.array([[0 + cropval, 0], [refined_contours.shape[1]-1-cropval, refined_contours.shape[0]]], dtype=int)
         self._image_refined.square_crop(rect=rect)
 
