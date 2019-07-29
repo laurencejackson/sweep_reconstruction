@@ -223,7 +223,7 @@ class EstimateRespiration(object):
         return medfilt2d(img, [kernel_size, kernel_size])  # median filter more robust to bands in balanced images
 
     @staticmethod
-    def _filter_denoise(img, weight=0.003):
+    def _filter_denoise(img, weight=0.002):
         """
         TV denoising
         :param imgs: slice to denoise [2D]
@@ -233,7 +233,7 @@ class EstimateRespiration(object):
         return restoration.denoise_tv_bregman(img, weight=weight)
 
     @staticmethod
-    def _filter_inv_gauss(img, alpha=8, sigma=1.0):
+    def _filter_inv_gauss(img, alpha=10, sigma=1.5):
         """
         TV denoising
         :param imgs: slice to denoise [2D]
