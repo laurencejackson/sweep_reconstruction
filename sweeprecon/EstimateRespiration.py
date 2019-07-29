@@ -233,7 +233,7 @@ class EstimateRespiration(object):
         return restoration.denoise_tv_bregman(img, weight=weight)
 
     @staticmethod
-    def _filter_inv_gauss(img, alpha=12, sigma=1.1):
+    def _filter_inv_gauss(img, alpha=8, sigma=1.0):
         """
         TV denoising
         :param imgs: slice to denoise [2D]
