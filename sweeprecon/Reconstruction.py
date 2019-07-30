@@ -51,9 +51,6 @@ class Reconstruction(object):
         opts = {'thickness': self._args.thickness}
         self._process_patches('reconstructAngio', opts)
 
-        # recombine patches
-        self._recombine_patches('combine_patches')
-
     def _process_patches(self, function_path, opts):
         """Loop over patch directory structure and apply function"""
 
@@ -75,6 +72,16 @@ class Reconstruction(object):
 
                 self._perform_svr(function_path, output_path, nstacks, source_path,
                                   target_path, exclude_path, opts=opts)
+
+            # combine patches
+            self._recombine_patches('combine_patches')
+
+            # rename output
+            os.rename('combined.nii.gz', self._write_paths.path_combined_patches(ww))
+
+            # clear patch list
+            self._recon_patch_list = []
+
 
     def _perform_svr(self, function_path, output_path, nstacks, source_path, target_path, exclude_path, opts=None):
         """Co-registers slices from source to slice in target"""
@@ -110,7 +117,7 @@ class Reconstruction(object):
         # combine_patches
         # Usage: combine_patches[target_volume][output_resolution][N][stack_1]..[stack_N]
         command_string_1 = str('%s %s %f %d' % (function_path,
-                                                self._write_paths.path_interpolated_3d(1),
+                                                self._write_paths.path_interpolated_3d_linear(1),
                                                 self._svr_opts['resolution'],
                                                 self._npatches))
 
