@@ -23,6 +23,7 @@ class EstimateRespiration(object):
     def __init__(self,
                  img,
                  write_paths,
+                 args,
                  method='body_area',
                  disable_crop_data=False,
                  plot_figures=True,
@@ -42,11 +43,12 @@ class EstimateRespiration(object):
         self._resp_method = method
         self._plot_figures = plot_figures
         self._disable_crop_data = disable_crop_data
-        self._crop_fraction = 0.4
 
         self.resp_raw = None
         self.resp_trend = None
         self.resp_trace = None
+
+        self._args = args
 
         self._n_threads = n_threads
 
@@ -80,14 +82,13 @@ class EstimateRespiration(object):
         Finds the best region to crop the image based on the respiratory content of the image
         :param resp_min: lower band of respiration frequency
         :param resp_max: upper band of respiration frequency
-        :param crop_fraction: percentage of image to crop
         :return:
         """
 
         fs = self._image.get_fs()
         sz = self._image.img.shape
         freqmat = np.zeros((sz[0], sz[2]))
-
+        print('Crop fraction: %f' % self._args.crop_fraction)
         for ln in range(0, sz[0]):
             lineseries = self._image.img[:, ln, :]
             frq = np.fft.fft(lineseries, axis=1)
@@ -99,9 +100,9 @@ class EstimateRespiration(object):
         freqs = np.fft.fftshift(np.fft.fftfreq(sz[2], 1 / fs))
         respii = np.where((freqs > resp_min) & (freqs < resp_max))
         respspectrum = np.sum(freqmat[:, respii[0]], axis=1)
-        respspectrum_c = np.convolve(respspectrum, np.ones(int(sz[0] * (self._crop_fraction * 1.2))), mode='same')
+        respspectrum_c = np.convolve(respspectrum, np.ones(int(sz[0] * (self._args.crop_fraction * 1.2))), mode='same')
         centerline = np.argmax(respspectrum_c)
-        width = int(sz[0] * self._crop_fraction * 0.5)
+        width = int(sz[0] * self._args.crop_fraction * 0.5)
 
         if self._plot_figures:
             PlotFigures.plot_respiration_frequency(freqmat, respii, freqs, centerline, width, sz)

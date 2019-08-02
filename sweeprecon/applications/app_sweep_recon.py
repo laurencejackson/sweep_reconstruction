@@ -42,6 +42,7 @@ def main():
     input_vars.add_kernel_dims(required=False)
     input_vars.add_n_threads(required=False)
     input_vars.add_flag_no_resp_recon(required=False)
+    input_vars.add_crop_fraction(required=False)
 
     # parse
     args = input_vars.parse_args()

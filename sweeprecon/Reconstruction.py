@@ -82,7 +82,6 @@ class Reconstruction(object):
             # clear patch list
             self._recon_patch_list = []
 
-
     def _perform_svr(self, function_path, output_path, nstacks, source_path, target_path, exclude_path, opts=None):
         """Co-registers slices from source to slice in target"""
 

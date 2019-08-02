@@ -84,6 +84,16 @@ class ArgParser(object):
                             ):
         self._add_argument(dict(locals()))
 
+    def add_crop_fraction(self,
+                            option_string=("-cf", "--crop_fraction"),
+                            metavar='',
+                            help="fraction of image cropped to segment body area for respiration",
+                            required=False,
+                            default=0.4,
+                            type=float
+                            ):
+        self._add_argument(dict(locals()))
+
     def add_n_resp_states(self,
                           option_string=("-n", "--nstates"),
                           metavar='',

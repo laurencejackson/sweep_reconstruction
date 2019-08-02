@@ -40,6 +40,7 @@ def app_estimate_respiration(pipeline=False):
         input_vars.add_interpolator(required=False)
         input_vars.add_kernel_dims(required=False)
         input_vars.add_n_threads(required=False)
+        input_vars.add_crop_fraction(required=False)
 
         # parse
         args = input_vars.parse_args()
@@ -60,6 +61,7 @@ def app_estimate_respiration(pipeline=False):
     # Estimate respiration
     resp = EstimateRespiration(image,
                                write_paths,
+                               args,
                                method='body_area',  # currently only body_area but space for other methods,
                                disable_crop_data=args.disable_crop,
                                n_threads=args.n_threads,
