@@ -37,7 +37,7 @@ The left column images shows the raw input data, the data is static and shows no
 </p>
 
 ## Installation
-The code was developed in python 3.5 on a windows machine running [Anaconda](https://www.anaconda.com/) and makes us of a number of 3rd party libraries (see requirements.txt), it is necessary to install these before running the code. 
+The code was developed in python 3.5 on a windows machine running [Anaconda](https://www.anaconda.com/) and makes use of a number of 3rd party libraries (see requirements.txt), it is necessary to install these before running the code. 
 
 To view the output an image viewer which preserves NIfTI geometry is required - I recommend [MITK workbench](http://mitk.org/wiki/Downloads)
 
