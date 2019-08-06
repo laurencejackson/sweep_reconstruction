@@ -20,21 +20,11 @@ The pipeline performs the following functions.
 ### Example
 The software takes as an input a dense stack of rapid-acquisition 2D images that are acquired fast enough to freeze in plane motion, but suffer from motion corruption in the through plane direction.
 
-An example reconstruction using this software is given below. The data shows a rapid 2D bSSFP acquisition utilising the SWEEP method for fetal/placental imaging. The figure below shows how the method is able to effectively correct for respiration induced motion and recover the temporal information (maternal respiration) while suppressing motion artefacts. 
+An example reconstruction using this software is given below. The data shows a rapid 2D bSSFP acquisition utilising the SWEEP method for fetal/placental imaging. The figure shows how the method is able to effectively correct for respiration induced motion.
 
-The left column images shows the raw input data, the data is static and shows no motion in the acquisition plane (top row) and motion corruption in the through plane direction (bottom row). After reconstruction with the `fast_linear` interpolation method the motion is corrected and the temporal component recovered (middle column). Using the slower `rbf` resampling method a smoother result is obtained (right column).
+The left column images shows the raw input data with motion corruption in the through plane direction (bottom row). After reconstruction with the `fast_linear` interpolation method the motion is corrected and the temporal component recovered (middle column). Using the slower `rbf` resampling method a smoother result is obtained (right column).
 
-<p align="center">
-  <img src="./data/figures/IMG_3D_sag.png" width="200" />
-  <img src="./data/figures/sag_lin.gif" width="200" /> 
-  <img src="./data/figures/sag_gpr.gif" width="200" />
-</p>
-
-<p align="center">
-  <img src="./data/figures/IMG_3D_cor.png" width="200" />
-  <img src="./data/figures/cor_lin.gif" width="200" /> 
-  <img src="./data/figures/cor_gpr.gif" width="200" />
-</p>
+<p align="center"><img width="600" src="./data/figures/results.png"></p>
 
 ## Installation
 The code was developed in python 3.5 on a windows machine running [Anaconda](https://www.anaconda.com/) and makes use of a number of 3rd party libraries (see requirements.txt), it is necessary to install these before running the code. 
