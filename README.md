@@ -24,7 +24,7 @@ An example reconstruction using this software is given below. The data shows a r
 
 The left column images shows the raw input data with motion corruption in the through plane direction (bottom row). After reconstruction with the `fast_linear` interpolation method the motion is corrected and the temporal component recovered (middle column). Using the slower `rbf` resampling method a smoother result is obtained (right column).
 
-<p align="center"><img width="600" src="./data/figures/results.png"></p>
+<p align="center"><img width="750" src="./data/figures/results.png"></p>
 
 ## Installation
 The code was developed in python 3.5 on a windows machine running [Anaconda](https://www.anaconda.com/) and makes use of a number of 3rd party libraries (see requirements.txt), it is necessary to install these before running the code. 
