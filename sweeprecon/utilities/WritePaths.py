@@ -13,6 +13,11 @@ class WritePaths(object):
 
         self.basename = os.path.basename(args.input)
 
+        # remove tags from basename
+        prestrings = ('IMG_3D_', 'IMG_4D_')
+        for substring in prestrings:
+            self.basename = self.basename.replace(substring, '')
+
         self._nii_ext = '.nii.gz'
         self.state = 0
         self._args = args
