@@ -168,5 +168,6 @@ class WritePaths(object):
         return os.path.join(os.getcwd(),  # cwd
                             self._recon_folder,
                             'IMG_3D_combined_' +
-                            str(resp_state)
+                            str(resp_state) +
+                            self._nii_ext
                             )
