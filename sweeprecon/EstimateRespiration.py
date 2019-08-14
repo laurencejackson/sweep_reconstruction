@@ -146,9 +146,11 @@ class EstimateRespiration(object):
 
         # second pass component connected to outside edges
         ac_mask[[0, ac_mask.shape[0] - 1], :, :] = True
-        labels = measure.label(ac_mask, background=0, connectivity=1)
-        ac_mask = np.zeros(labels.shape).astype(bool)
-        ac_mask[(labels == labels[0, 0, 0]) | (labels == labels[filtered_image.shape[0] - 1, 0, 0])] = True
+        for zz in range(0, ac_mask.shape[2]):
+            labels = measure.label(ac_mask[:, :, zz], background=False, connectivity=1)
+            tmp = np.zeros(labels.shape).astype(bool)
+            tmp[(labels == labels[0, 0]) | (labels == labels[ac_mask.shape[0] - 1, 0])] = True
+            ac_mask[:, :, zz] = tmp
 
         # write initialised contour data to new image
         self._image_initialised.set_data(ac_mask)
