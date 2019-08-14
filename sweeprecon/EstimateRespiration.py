@@ -176,6 +176,10 @@ class EstimateRespiration(object):
                                                            self._image.img,
                                                            cores=self._n_threads)
 
+            filtered_image = self._process_slices_parallel(self._filter_median,
+                                                           filtered_image,
+                                                           cores=self._n_threads)
+
             filtered_image = self._process_slices_parallel(self._filter_inv_gauss,
                                                            filtered_image,
                                                            cores=self._n_threads)
