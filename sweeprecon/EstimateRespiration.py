@@ -247,7 +247,7 @@ class EstimateRespiration(object):
         return restoration.denoise_tv_bregman(img, weight=weight)
 
     @staticmethod
-    def _filter_inv_gauss(img, alpha=15, sigma=1.4):
+    def _filter_inv_gauss(img, alpha=8, sigma=1.1):
         """
         TV denoising
         :param imgs: slice to denoise [2D]
@@ -274,7 +274,7 @@ class EstimateRespiration(object):
                                                     )
 
     @staticmethod
-    def _segment_gac(img, init_level_set, iterations=200):
+    def _segment_gac(img, init_level_set, iterations=100):
         """
         refines initial segmentation contours using geodesic active contours
         :param imgs: list of 2 images [2D] imgs[0] = slice to segment: imgs[1] = initial level set
@@ -285,7 +285,7 @@ class EstimateRespiration(object):
                                                                   iterations,
                                                                   init_level_set=init_level_set,
                                                                   smoothing=3,
-                                                                  balloon=1.0
+                                                                  balloon=1.2
                                                                   )
 
     @staticmethod
