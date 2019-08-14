@@ -11,7 +11,7 @@ import copy
 import sweeprecon.utilities.PlotFigures as PlotFigures
 
 from multiprocessing import Pool, cpu_count
-from scipy.ndimage import gaussian_filter
+from scipy.ndimage import gaussian_filter, morphology, binary_fill_holes
 from scipy.signal import medfilt2d
 from skimage import restoration, measure, segmentation
 from sklearn.gaussian_process import GaussianProcessRegressor
@@ -136,8 +136,13 @@ class EstimateRespiration(object):
 
         # take components connected to anterior/posterior sides
         labels = measure.label(img_thresh, background=0, connectivity=1)
-        ac_mask = np.zeros(labels.shape)
-        ac_mask[(labels == labels[0, 0, 0]) | (labels == labels[filtered_image.shape[0] - 1, 0, 0])] = 1
+        ac_mask = np.zeros(labels.shape).astype(bool)
+        ac_mask[(labels == labels[0, 0, 0]) | (labels == labels[filtered_image.shape[0] - 1, 0, 0])] = True
+
+        for zz in range(0, ac_mask.shape[2]):
+            ac_mask[:,:,zz] = binary_fill_holes(ac_mask[:,:,zz])
+
+        ac_mask = morphology.binary_erosion(ac_mask, structure=np.ones((2, 4, 1)))  # erode primarily in FH direction to reduce risk of contour propagation inside the body
 
         # write initialised contour data to new image
         self._image_initialised.set_data(ac_mask)
@@ -195,7 +200,7 @@ class EstimateRespiration(object):
         self.resp_raw = np.squeeze(np.sum(self._image_refined.img, axis=(0, 1)))
 
     def _gpr_filter(self):
-        """Removes low frequency global change sin body area to extract respiration trace only"""
+        """Removes low frequency global changes in body area to extract respiration trace only"""
 
         # define GPR kernel
         kernel = 1.0 * RBF(length_scale=8.0, length_scale_bounds=(4, 20)) \
@@ -224,7 +229,7 @@ class EstimateRespiration(object):
         return medfilt2d(img, [kernel_size, kernel_size])  # median filter more robust to bands in balanced images
 
     @staticmethod
-    def _filter_denoise(img, weight=0.002):
+    def _filter_denoise(img, weight=0.001):
         """
         TV denoising
         :param imgs: slice to denoise [2D]
@@ -234,7 +239,7 @@ class EstimateRespiration(object):
         return restoration.denoise_tv_bregman(img, weight=weight)
 
     @staticmethod
-    def _filter_inv_gauss(img, alpha=10, sigma=1.5):
+    def _filter_inv_gauss(img, alpha=15, sigma=1.4):
         """
         TV denoising
         :param imgs: slice to denoise [2D]
@@ -271,8 +276,8 @@ class EstimateRespiration(object):
         return segmentation.morphological_geodesic_active_contour(img,
                                                                   iterations,
                                                                   init_level_set=init_level_set,
-                                                                  smoothing=2,
-                                                                  balloon=1.2
+                                                                  smoothing=3,
+                                                                  balloon=1.0
                                                                   )
 
     @staticmethod
