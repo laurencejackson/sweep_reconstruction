@@ -142,7 +142,13 @@ class EstimateRespiration(object):
         for zz in range(0, ac_mask.shape[2]):
             ac_mask[:, :, zz] = binary_fill_holes(ac_mask[:, :, zz])
 
-        ac_mask = morphology.binary_erosion(ac_mask, structure=np.ones((3, 6, 1)))  # erode primarily in FH direction to reduce risk of contour propagation inside the body
+        ac_mask = morphology.binary_erosion(ac_mask, structure=np.ones((2, 6, 1)))  # erode primarily in FH direction to reduce risk of contour propagation inside the body
+
+        # second pass component connected to outside edges
+        ac_mask[[0, ac_mask.shape[0] - 1], :, :] = True
+        labels = measure.label(ac_mask, background=0, connectivity=1)
+        ac_mask = np.zeros(labels.shape).astype(bool)
+        ac_mask[(labels == labels[0, 0, 0]) | (labels == labels[filtered_image.shape[0] - 1, 0, 0])] = True
 
         # write initialised contour data to new image
         self._image_initialised.set_data(ac_mask)
@@ -150,7 +156,7 @@ class EstimateRespiration(object):
 
     def _refine_boundaries(self, method='gac'):
         """Refines body area estimates using Chan-Vese active contour model"""
-        
+
         # refine segmentation
         print('Contour refinement method: %s' % method)
         if method is 'cv':
