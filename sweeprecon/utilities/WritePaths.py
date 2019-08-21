@@ -32,8 +32,9 @@ class WritePaths(object):
 
 
     # path definition functions
-    def path_sorted(self):
+    def path_sorted(self, pre=''):
         return os.path.join(os.getcwd(),    # cwd
+                            pre +
                              'IMG_3D_' +     # prefix
                             self.basename   # basename
                             )
@@ -66,15 +67,17 @@ class WritePaths(object):
                             self._nii_ext  # file ext
                             )
 
-    def path_interpolated_4d(self):
+    def path_interpolated_4d(self, pre=''):
         return os.path.join(os.getcwd(),  # cwd
+                            pre +
                             'IMG_4D_interpolated_' +
                             self._args.interpolator + '_' +
                             self.basename
                             )
 
-    def path_interpolated_4d_linear(self):
+    def path_interpolated_4d_linear(self, pre=''):
         return os.path.join(os.getcwd(),  # cwd
+                            pre +
                             'IMG_4D_linear_' +
                             self.basename
                             )

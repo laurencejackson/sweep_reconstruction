@@ -18,6 +18,7 @@ import multiprocessing as mp
 import numpy as np
 
 from scipy import interpolate
+from skimage.filters import frangi
 
 
 class ResampleData(object):
@@ -27,7 +28,7 @@ class ResampleData(object):
                  states,
                  slice_locations,
                  write_paths,
-                 interp_method,
+                 args,
                  resolution='isotropic',
                  kernel_dims=1,
                  n_threads=0
@@ -48,7 +49,7 @@ class ResampleData(object):
         self._states = states
         self._slice_locations = slice_locations
         self._write_paths = write_paths
-        self._interp_method = interp_method
+        self._args = args
         self._resolution = resolution
         self._nstates = np.max(states)
         self._kernel_dims = kernel_dims
@@ -65,8 +66,8 @@ class ResampleData(object):
         self._interp_fast_linear()
 
         # perform chosen refined interpolation
-        print('Re-sampling method: %s' % self._interp_method)
-        if self._interp_method == 'rbf':
+        print('Re-sampling method: %s' % self._args.interpolator)
+        if self._args.interpolator == 'rbf':
             self._interp_rbf()
 
     def _write_resampled_data(self, image_obj, path):
@@ -143,6 +144,13 @@ class ResampleData(object):
         self._image_4d.set_data(self._img_4d)
         self._write_resampled_data(self._image_4d, self._write_paths.path_interpolated_4d_linear())
 
+        # if frangi filter 4D linear volume
+        if self._args.frangi:
+            img_frangi = copy.deepcopy(self._image_4d)
+            img_frangi.apply_spatial_filter(frangi, 4, sigmas=(0.75, 2.0, 0.25), alpha=0.5, beta=0.5,
+                                            gamma=90, black_ridges=False)
+            self._write_resampled_data(img_frangi, self._write_paths.path_interpolated_4d_linear(pre='frangi_'))
+
     def _interp_rbf(self):
         """Interpolate using radial basis function"""
 
@@ -185,6 +193,7 @@ class ResampleData(object):
             # save single resp state volumes
             self._image_resp_3d.set_data(self._img_4d[:, :, :, ww - 1])
             self._write_resampled_data(self._image_resp_3d, self._write_paths.path_interpolated_3d(ww))
+
             print('---')
 
         pool.close()
@@ -195,6 +204,13 @@ class ResampleData(object):
         # write full 4D interp volume
         self._image_4d.set_data(self._img_4d)
         self._write_resampled_data(self._image_4d, self._write_paths.path_interpolated_4d())
+
+        # if frangi filter 4D rbf volume
+        if self._args.frangi:
+            img_frangi = copy.deepcopy(self._image_4d)
+            img_frangi.apply_spatial_filter(frangi, 4, sigmas=(0.75, 2.0, 0.25), alpha=0.5, beta=0.5,
+                                            gamma=90, black_ridges=False)
+            self._write_resampled_data(img_frangi, self._write_paths.path_interpolated_4d(pre='frangi_'))
 
         # print function duration info
         print('%s duration: %.1fs' % ('_interp_rbf', (time.time() - t1)))

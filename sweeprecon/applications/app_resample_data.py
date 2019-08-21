@@ -36,6 +36,7 @@ def app_resample_data(pipeline=False):
         input_vars.add_interpolator(required=False)
         input_vars.add_kernel_dims(required=False)
         input_vars.add_n_threads(required=False)
+        input_vars.add_flag_frangi(required=False)
 
         # parse
         args = input_vars.parse_args()
@@ -62,7 +63,7 @@ def app_resample_data(pipeline=False):
                              logger.log.resp_states,
                              logger.log.geo_slice_locations,
                              write_paths,
-                             args.interpolator,
+                             args,
                              kernel_dims=args.kernel_dims,
                              n_threads=args.n_threads
                              )

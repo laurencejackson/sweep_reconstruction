@@ -159,3 +159,12 @@ class ArgParser(object):
                                    default=False,
                                    ):
         self._add_argument(dict(locals()))
+
+    def add_flag_frangi(self,
+                        option_string=("-fr", "--frangi"),
+                        action='store_true',
+                        help="output frangi filtered versions of images",
+                        required=False,
+                        default=False,
+                        ):
+        self._add_argument(dict(locals()))

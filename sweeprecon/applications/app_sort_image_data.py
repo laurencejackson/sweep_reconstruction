@@ -6,7 +6,8 @@ Laurence Jackson, BME, KCL, 2019
 """
 
 import os
-
+import copy
+from skimage.filters import frangi
 from sweeprecon.io.ArgParser import ArgParser
 from sweeprecon.io.ImageData import ImageData
 from sweeprecon.utilities.LogData import LogData
@@ -37,6 +38,7 @@ def app_sort_image_data(pipeline=False):
         input_vars.add_interpolator(required=False)
         input_vars.add_kernel_dims(required=False)
         input_vars.add_n_threads(required=False)
+        input_vars.add_flag_frangi(required=False)
 
         # parse
         args = input_vars.parse_args()
@@ -69,6 +71,12 @@ def app_sort_image_data(pipeline=False):
 
     # save output
     image.write_nii(write_paths.path_sorted())
+
+    if args.frangi:
+        img_frangi = copy.deepcopy(image)
+        img_frangi.apply_spatial_filter(frangi, 3, sigmas=(0.75, 2.0, 0.25), alpha=0.5, beta=0.5,
+                                        gamma=90, black_ridges=False)
+        img_frangi.write_nii(write_paths.path_sorted(pre='frangi_'))
 
     # record output
     logger.set_key('input_data_sorted', write_paths.path_sorted())

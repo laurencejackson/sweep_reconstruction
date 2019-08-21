@@ -129,3 +129,28 @@ class ImageData(object):
         return np.linspace(0, (self.nii.header["pixdim"][3] *
                                self.img.shape[2]) + self.nii.header["pixdim"][3],
                            self.img.shape[2])
+
+    def apply_spatial_filter(self, filter_function, ndims, **kwargs):
+        """
+        Applies filter function in xyz dims to image data using input arguments
+        filter must be function of the form filter(input, **kwargs)
+        e.g.
+        imgObj = copy.deepcopy(img)
+        imgObj.apply_spatial_filter(frangi, sigmas=(0.75, 2.5, 0.25),
+                                            alpha=0.5,
+                                            beta=0.5,
+                                            gamma=90,
+                                            black_ridges=False)
+        imgObj.write_nii('name')
+        """
+        print('Applying %s filter...' % filter_function)
+        temp = np.zeros(self.img.shape)
+        if ndims is 4:  # if input volume has time component then apply to each time point
+            for tt in range(0, self.img.shape[3]):
+                temp[:, :, :, tt] = filter_function(self.img[:, :, :, tt], **kwargs)
+        elif ndims is 3:
+            temp[:, :, :] = filter_function(self.img[:, :, :], **kwargs)
+        else:
+            assert IndexError
+
+        self.set_data(temp)
