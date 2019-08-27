@@ -197,6 +197,7 @@ class ResampleData(object):
             print('---')
 
         pool.close()
+        pool.join()
 
         # reset python environ to normalise threading
         os.environ.clear()

@@ -136,11 +136,11 @@ class ImageData(object):
         filter must be function of the form filter(input, **kwargs)
         e.g.
         imgObj = copy.deepcopy(img)
-        imgObj.apply_spatial_filter(frangi, sigmas=(0.75, 2.5, 0.25),
-                                            alpha=0.5,
-                                            beta=0.5,
-                                            gamma=90,
-                                            black_ridges=False)
+        imgObj.apply_spatial_filter(frangi, 3,  sigmas=(0.75, 2.5, 0.25),
+                                                alpha=0.5,
+                                                beta=0.5,
+                                                gamma=90,
+                                                black_ridges=False)
         imgObj.write_nii('name')
         """
         print('Applying %s filter...' % filter_function)
@@ -149,7 +149,7 @@ class ImageData(object):
             for tt in range(0, self.img.shape[3]):
                 temp[:, :, :, tt] = filter_function(self.img[:, :, :, tt], **kwargs)
         elif ndims is 3:
-            temp[:, :, :] = filter_function(self.img[:, :, :], **kwargs)
+            temp = filter_function(self.img, **kwargs)
         else:
             assert IndexError
 

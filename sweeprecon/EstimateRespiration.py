@@ -321,5 +321,8 @@ class EstimateRespiration(object):
         # print function duration info
         print('%s duration: %.1fs [%d processes]' % (function_name.__name__, (time.time() - t1), cores))
 
+        pool.close()
+        pool.join()
+
         # return recombined array
         return np.stack(sub_arrays, axis=2)
