@@ -9,6 +9,11 @@ import copy
 import numpy as np
 import subprocess
 
+from skimage.filters import frangi
+
+from sweeprecon.io.ImageData import ImageData
+
+
 
 class Reconstruction(object):
     """Class containing data and functions for reconstructing image data"""
@@ -78,6 +83,12 @@ class Reconstruction(object):
 
             # rename output
             os.rename('combined.nii.gz', self._write_paths.path_combined_patches(ww))
+
+            if self._args.frangi:
+                img_frangi = ImageData(self._write_paths.path_combined_patches(ww))
+                img_frangi.apply_spatial_filter(frangi, 4, sigmas=(0.75, 2.0, 0.25), alpha=0.5, beta=0.5,
+                                                gamma=90, black_ridges=False)
+                img_frangi.write_nii(self._write_paths.path_interpolated_4d_linear(pre=('frangi_%d_' % ww)))
 
             # clear patch list
             self._recon_patch_list = []
