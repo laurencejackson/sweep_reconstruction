@@ -151,6 +151,15 @@ class ArgParser(object):
                                ):
         self._add_argument(dict(locals()))
 
+    def add_flag_ffd_recon(self,
+                           option_string=("-ffd", "--free_form_deformation"),
+                           action='store_true',
+                           help="use free form deformation for reconstruction",
+                           required=False,
+                           default=False,
+                           ):
+        self._add_argument(dict(locals()))
+
     def add_flag_disable_resp_crop(self,
                                    option_string=("-c", "--disable_crop"),
                                    action='store_false',

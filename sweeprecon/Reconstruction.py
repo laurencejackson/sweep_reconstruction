@@ -14,7 +14,6 @@ from skimage.filters import frangi
 from sweeprecon.io.ImageData import ImageData
 
 
-
 class Reconstruction(object):
     """Class containing data and functions for reconstructing image data"""
 
@@ -53,7 +52,9 @@ class Reconstruction(object):
         self._svr_options_init()
 
         # TODO read more opts from args
-        opts = {'thickness': self._args.thickness}
+        opts = {'thickness': self._args.thickness,
+                'ffd': self._args.free_form_deformation}
+
         self._process_patches('reconstructAngio', opts)
 
     def _process_patches(self, function_path, opts):
@@ -150,7 +151,7 @@ class Reconstruction(object):
             "lambda": 0.035,
 
             "ncc": True,
-            "ffd": True,
+            "ffd": False,
             "gaussian_only": False,
             "svr_only": True,
             "no_intensity_matching": True,

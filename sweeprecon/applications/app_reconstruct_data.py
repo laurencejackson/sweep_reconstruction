@@ -39,6 +39,7 @@ def app_reconstruct_data(pipeline=False):
         input_vars.add_interpolator(required=False)
         input_vars.add_flag_no_resp_recon(required=False)
         input_vars.add_flag_frangi(required=False)
+        input_vars.add_flag_ffd_recon(required=False)
 
         # parse
         args = input_vars.parse_args()

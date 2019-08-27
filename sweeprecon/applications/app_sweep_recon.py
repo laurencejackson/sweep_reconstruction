@@ -44,6 +44,7 @@ def main():
     input_vars.add_flag_no_resp_recon(required=False)
     input_vars.add_crop_fraction(required=False)
     input_vars.add_flag_frangi(required=False)
+    input_vars.add_flag_ffd_recon(required=False)
 
     # parse
     args = input_vars.parse_args()
