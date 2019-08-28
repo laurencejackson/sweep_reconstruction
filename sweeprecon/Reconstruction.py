@@ -87,7 +87,7 @@ class Reconstruction(object):
 
             if self._args.frangi:
                 img_frangi = ImageData(self._write_paths.path_combined_patches(ww))
-                img_frangi.apply_spatial_filter(frangi, 4, sigmas=(0.75, 2.0, 0.25), alpha=0.5, beta=0.5,
+                img_frangi.apply_spatial_filter(frangi, 3, sigmas=(0.75, 2.0, 0.25), alpha=0.5, beta=0.5,
                                                 gamma=90, black_ridges=False)
                 img_frangi.write_nii(self._write_paths.path_interpolated_4d_linear(pre=('frangi_%d_' % ww)))
 
@@ -141,17 +141,19 @@ class Reconstruction(object):
         """Initialise SVR options with defaults"""
 
         self._svr_opts = {
-            "iterations": 1,
+            # variable options
             "thickness": 2.5,
+            "ffd": False,
+
+            # hard-coded options
+            "iterations": 1,
             "resolution": 0.75,
             "sr_iterations": 4,
             "filter": 10,
             "lastIter": 0.03,
             "delta": 400,
             "lambda": 0.035,
-
             "ncc": True,
-            "ffd": False,
             "gaussian_only": False,
             "svr_only": True,
             "no_intensity_matching": True,
