@@ -89,7 +89,7 @@ class Reconstruction(object):
                 img_frangi = ImageData(self._write_paths.path_combined_patches(ww))
                 img_frangi.apply_spatial_filter(frangi, 3, sigmas=(0.75, 2.0, 0.25), alpha=0.5, beta=0.5,
                                                 gamma=90, black_ridges=False)
-                img_frangi.write_nii(self._write_paths.path_interpolated_4d_linear(pre=('frangi_%d_' % ww)))
+                img_frangi.write_nii(self._write_paths.path_combined_patches(ww, pre='frangi_'))
 
             # clear patch list
             self._recon_patch_list = []

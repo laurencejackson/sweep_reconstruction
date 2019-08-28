@@ -167,9 +167,10 @@ class WritePaths(object):
                             self._nii_ext
                             )
 
-    def path_combined_patches(self, resp_state):
+    def path_combined_patches(self, resp_state, pre=''):
         return os.path.join(os.getcwd(),  # cwd
                             self._recon_folder,
+                            pre +
                             'IMG_3D_combined_' +
                             str(resp_state) +
                             self._nii_ext
