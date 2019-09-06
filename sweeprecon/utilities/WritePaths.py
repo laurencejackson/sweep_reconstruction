@@ -14,7 +14,7 @@ class WritePaths(object):
         self.basename = os.path.basename(args.input)
 
         # remove tags from basename
-        prestrings = ('IMG_3D_', 'IMG_4D_')
+        prestrings = ('IMG_3D_', 'IMG_4D_', 'frangi_')
         for substring in prestrings:
             self.basename = self.basename.replace(substring, '')
 
@@ -29,7 +29,6 @@ class WritePaths(object):
         self._resp_vols_folder = '3D_respiration_volumes_' + str(args.interpolator)
         self._patches_folder = 'patches'
         self._recon_folder = 'RECON'
-
 
     # path definition functions
     def path_sorted(self, pre=''):

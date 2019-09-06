@@ -10,6 +10,10 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 
 
+# disable interactive plots
+plt.ioff()
+
+
 def plot_respiration_frequency(freqmat, respii, freqs, centerline, width, sz, name='respiration_frequency'):
 
     plt.imshow(freqmat[:, respii[0]], aspect='auto')
@@ -21,6 +25,7 @@ def plot_respiration_frequency(freqmat, respii, freqs, centerline, width, sz, na
     plt.axhline(centerline + width, color='black')
 
     plt.savefig('fig_' + name, dpi=300)
+    plt.close()
 
 
 def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summary'):
@@ -92,3 +97,4 @@ def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summa
     plt.tight_layout()
 
     plt.savefig('fig_respiration_summary', dpi=300)
+    plt.close(fig)
