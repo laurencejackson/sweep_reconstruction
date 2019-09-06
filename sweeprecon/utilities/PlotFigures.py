@@ -4,6 +4,8 @@ List of functions to produce figures describing output of reconstruction toolkit
 Laurence Jackson, BME, KCL, 2019
 """
 
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.gridspec as gridspec
