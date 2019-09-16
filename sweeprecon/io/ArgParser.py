@@ -94,6 +94,16 @@ class ArgParser(object):
                           ):
         self._add_argument(dict(locals()))
 
+    def add_ba_method(self,
+                          option_string=("-ba", "--ba_method"),
+                          metavar='',
+                          help="method for segmentation body area (gac or cv)",
+                          required=False,
+                          default='gac',
+                          type=str
+                          ):
+        self._add_argument(dict(locals()))
+
     def add_n_resp_states(self,
                           option_string=("-n", "--nstates"),
                           metavar='',

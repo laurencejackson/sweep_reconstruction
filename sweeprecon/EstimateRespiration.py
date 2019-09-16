@@ -156,12 +156,12 @@ class EstimateRespiration(object):
         self._image_initialised.set_data(ac_mask)
         self._image_initialised.write_nii(self._write_paths.path_initialised_contours())
 
-    def _refine_boundaries(self, method='gac'):
+    def _refine_boundaries(self):
         """Refines body area estimates using Chan-Vese active contour model"""
 
         # refine segmentation
-        print('Contour refinement method: %s' % method)
-        if method is 'cv':
+        print('Contour refinement method: %s' % self._args.ba_method)
+        if self._args.ba_method is 'cv':
             filtered_image = self._process_slices_parallel(self._filter_denoise,
                                                            self._image.img,
                                                            cores=self._n_threads)
@@ -170,7 +170,7 @@ class EstimateRespiration(object):
                                                              filtered_image,
                                                              self._image_initialised.img,
                                                              cores=self._n_threads)
-        elif method is 'gac':
+        elif self._args.ba_method is 'gac':
             # filter/pre-process image
             filtered_image = self._process_slices_parallel(self._filter_denoise,
                                                            self._image.img,

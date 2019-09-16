@@ -43,6 +43,7 @@ def main():
     input_vars.add_n_threads(required=False)
     input_vars.add_flag_no_resp_recon(required=False)
     input_vars.add_crop_fraction(required=False)
+    input_vars.add_ba_method(required=False)
     input_vars.add_flag_frangi(required=False)
     input_vars.add_flag_ffd_recon(required=False)
 
@@ -67,7 +68,7 @@ def main():
     # ______________________ Re-sampling image data ______________________
     app_resample_data(pipeline=True)
 
-    # ______________________ Re-sampling image data ______________________
+    # ______________________ Reconstruct image data ______________________
     app_reconstruct_data(pipeline=True)
 
     return
