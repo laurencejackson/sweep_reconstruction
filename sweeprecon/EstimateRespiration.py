@@ -128,7 +128,8 @@ class EstimateRespiration(object):
                                                        )
 
         # determine threshold of background data
-        thresh = np.mean(filtered_image[[0, filtered_image.shape[0] - 1], :, :]) + (0.5 * np.std(filtered_image[[0, filtered_image.shape[0] - 1], :, :]))
+        # thresh = np.mean(filtered_image[[0, filtered_image.shape[0] - 1], :, :]) + (0.25 * np.std(filtered_image[[0, filtered_image.shape[0] - 1], :, :]))
+        thresh = np.max(filtered_image[[0, filtered_image.shape[0] - 1], :, :])
 
         # apply threshold - always include top and bottom two rows in mask (limited to sagittal at the moment)
         img_thresh = filtered_image <= thresh
