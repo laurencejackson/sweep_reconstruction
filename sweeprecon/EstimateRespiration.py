@@ -275,8 +275,8 @@ class EstimateRespiration(object):
                                                     iterations,
                                                     init_level_set=init_level_set,
                                                     smoothing=9,
-                                                    lambda1=2.5,
-                                                    lambda2=0.5
+                                                    lambda1=1.0,
+                                                    lambda2=1.0
                                                     )
 
     @staticmethod
