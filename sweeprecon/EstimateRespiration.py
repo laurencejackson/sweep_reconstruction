@@ -13,7 +13,7 @@ import sweeprecon.utilities.PlotFigures as PlotFigures
 from multiprocessing import Pool, cpu_count
 from scipy.ndimage import gaussian_filter, morphology, binary_fill_holes
 from scipy.signal import medfilt2d
-from skimage import restoration, measure, segmentation
+from skimage import restoration, measure, segmentation, exposure
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 
@@ -162,6 +162,11 @@ class EstimateRespiration(object):
         # refine segmentation
         print('Contour refinement method: %s' % self._args.ba_method)
         if self._args.ba_method == 'cv':
+
+            filtered_image = self._process_slices_parallel(self._filter_adaptive_hist_eq,
+                                                           self._image.img,
+                                                           cores=self._n_threads)
+
             filtered_image = self._process_slices_parallel(self._filter_denoise,
                                                            self._image.img,
                                                            cores=self._n_threads)
@@ -172,6 +177,10 @@ class EstimateRespiration(object):
                                                              cores=self._n_threads)
         elif self._args.ba_method == 'gac':
             # filter/pre-process image
+            filtered_image = self._process_slices_parallel(self._filter_adaptive_hist_eq,
+                                                           self._image.img,
+                                                           cores=self._n_threads)
+
             filtered_image = self._process_slices_parallel(self._filter_denoise,
                                                            self._image.img,
                                                            cores=self._n_threads)
@@ -261,6 +270,15 @@ class EstimateRespiration(object):
         :return:
         """
         return segmentation.inverse_gaussian_gradient(img, alpha=alpha, sigma=sigma)
+
+    @staticmethod
+    def _filter_adaptive_hist_eq(img):
+        """
+        adaptive histogram equalisation
+        :param imgs: slice to equalise [2D]
+        :return:
+        """
+        return exposure.equalize_adapthist(img.astype('uint16'), clip_limit=0.04)
 
     @staticmethod
     def _segment_cv(img, init_level_set, iterations=100):
