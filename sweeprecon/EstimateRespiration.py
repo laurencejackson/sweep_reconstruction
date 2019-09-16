@@ -161,7 +161,7 @@ class EstimateRespiration(object):
 
         # refine segmentation
         print('Contour refinement method: %s' % self._args.ba_method)
-        if self._args.ba_method is 'cv':
+        if self._args.ba_method == 'cv':
             filtered_image = self._process_slices_parallel(self._filter_denoise,
                                                            self._image.img,
                                                            cores=self._n_threads)
@@ -170,7 +170,7 @@ class EstimateRespiration(object):
                                                              filtered_image,
                                                              self._image_initialised.img,
                                                              cores=self._n_threads)
-        elif self._args.ba_method is 'gac':
+        elif self._args.ba_method == 'gac':
             # filter/pre-process image
             filtered_image = self._process_slices_parallel(self._filter_denoise,
                                                            self._image.img,
@@ -185,9 +185,11 @@ class EstimateRespiration(object):
                                                            cores=self._n_threads)
 
             refined_contours = self._process_slices_parallel(self._segment_gac,
-                                                         filtered_image,
-                                                         self._image_initialised.img,
-                                                         cores=self._n_threads)
+                                                             filtered_image,
+                                                             self._image_initialised.img,
+                                                             cores=self._n_threads)
+        else:
+            print('invalid body area method')
 
         # save filtered image
         self._image_refined.set_data(filtered_image)
