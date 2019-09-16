@@ -142,7 +142,7 @@ class EstimateRespiration(object):
         for zz in range(0, ac_mask.shape[2]):
             ac_mask[:, :, zz] = binary_fill_holes(ac_mask[:, :, zz])
 
-        ac_mask = morphology.binary_erosion(ac_mask, structure=np.ones((6, 10, 1)))  # erode primarily in FH direction to reduce risk of contour propagation inside the body
+        ac_mask = morphology.binary_erosion(ac_mask, structure=np.ones((3, 6, 1)))  # erode primarily in FH direction to reduce risk of contour propagation inside the body
 
         # second pass component connected to outside edges
         ac_mask[[0, ac_mask.shape[0] - 1], :, :] = True
@@ -252,7 +252,7 @@ class EstimateRespiration(object):
         return medfilt2d(img, [kernel_size, kernel_size])  # median filter more robust to bands in balanced images
 
     @staticmethod
-    def _filter_denoise(img, weight=0.001):
+    def _filter_denoise(img, weight=0.008):
         """
         TV denoising
         :param imgs: slice to denoise [2D]
@@ -308,8 +308,8 @@ class EstimateRespiration(object):
         return segmentation.morphological_geodesic_active_contour(img,
                                                                   iterations,
                                                                   init_level_set=init_level_set,
-                                                                  smoothing=3,
-                                                                  balloon=1.2
+                                                                  smoothing=4,
+                                                                  balloon=0.6
                                                                   )
 
     @staticmethod
