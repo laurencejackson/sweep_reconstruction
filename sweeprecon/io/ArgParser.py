@@ -161,6 +161,15 @@ class ArgParser(object):
                                ):
         self._add_argument(dict(locals()))
 
+    def add_flag_no_auto_crop(self,
+                               option_string=("-nac", "--no_auto_crop"),
+                               action='store_true',
+                               help="default resp crop to center of image",
+                               required=False,
+                               default=False,
+                               ):
+        self._add_argument(dict(locals()))
+
     def add_flag_ffd_recon(self,
                            option_string=("-ffd", "--free_form_deformation"),
                            action='store_true',

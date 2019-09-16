@@ -46,6 +46,7 @@ def main():
     input_vars.add_ba_method(required=False)
     input_vars.add_flag_frangi(required=False)
     input_vars.add_flag_ffd_recon(required=False)
+    input_vars.add_flag_no_auto_crop(required=False)
 
     # parse
     args = input_vars.parse_args()

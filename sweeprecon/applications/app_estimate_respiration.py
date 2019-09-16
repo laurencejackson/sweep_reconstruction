@@ -42,7 +42,8 @@ def app_estimate_respiration(pipeline=False):
         input_vars.add_n_threads(required=False)
         input_vars.add_crop_fraction(required=False)
         input_vars.add_ba_method(required=False)
-
+        input_vars.add_flag_no_auto_crop(required=False)
+        
         # parse
         args = input_vars.parse_args()
         write_paths = WritePaths(args)

@@ -84,25 +84,29 @@ class EstimateRespiration(object):
         :param resp_max: upper band of respiration frequency
         :return:
         """
-
-        fs = self._image.get_fs()
         sz = self._image.img.shape
-        freqmat = np.zeros((sz[0], sz[2]))
-        print('Crop fraction: %f' % self._args.crop_fraction)
-        for ln in range(0, sz[0]):
-            lineseries = self._image.img[:, ln, :]
-            frq = np.fft.fft(lineseries, axis=1)
-            freq_line = np.sum(abs(np.fft.fftshift(frq)), axis=0)
-            freq_line = (freq_line - np.min(freq_line)) / max((np.max(freq_line) - np.min(freq_line)), 1)
-            freqmat[ln, :] = freq_line
-
-        freqmat = gaussian_filter(freqmat, sigma=1.2)
-        freqs = np.fft.fftshift(np.fft.fftfreq(sz[2], 1 / fs))
-        respii = np.where((freqs > resp_min) & (freqs < resp_max))
-        respspectrum = np.sum(freqmat[:, respii[0]], axis=1)
-        respspectrum_c = np.convolve(respspectrum, np.ones(int(sz[0] * (self._args.crop_fraction * 1.2))), mode='same')
-        centerline = np.argmax(respspectrum_c)
         width = int(sz[0] * self._args.crop_fraction * 0.5)
+        fs = self._image.get_fs()
+
+        if not self._args.no_auto_crop:
+            freqmat = np.zeros((sz[0], sz[2]))
+            print('Crop fraction: %f' % self._args.crop_fraction)
+            for ln in range(0, sz[0]):
+                lineseries = self._image.img[:, ln, :]
+                frq = np.fft.fft(lineseries, axis=1)
+                freq_line = np.sum(abs(np.fft.fftshift(frq)), axis=0)
+                freq_line = (freq_line - np.min(freq_line)) / max((np.max(freq_line) - np.min(freq_line)), 1)
+                freqmat[ln, :] = freq_line
+
+            freqmat = gaussian_filter(freqmat, sigma=1.2)
+            freqs = np.fft.fftshift(np.fft.fftfreq(sz[2], 1 / fs))
+            respii = np.where((freqs > resp_min) & (freqs < resp_max))
+            respspectrum = np.sum(freqmat[:, respii[0]], axis=1)
+            respspectrum_c = np.convolve(respspectrum, np.ones(int(sz[0] * (self._args.crop_fraction * 1.2))), mode='same')
+            centerline = np.argmax(respspectrum_c)
+
+        else:
+            centerline = np.floor(sz[1]/2)
 
         if self._plot_figures:
             PlotFigures.plot_respiration_frequency(freqmat, respii, freqs, centerline, width, sz)
