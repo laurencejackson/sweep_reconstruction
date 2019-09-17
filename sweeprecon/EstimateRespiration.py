@@ -172,6 +172,10 @@ class EstimateRespiration(object):
                                                            self._image.img,
                                                            cores=self._n_threads)
 
+            filtered_image = self._process_slices_parallel(self._filter_denoise,
+                                                           self._image.img,
+                                                           cores=self._n_threads)
+
             filtered_image = self._process_slices_parallel(self._filter_median,
                                                            self._image.img,
                                                            cores=self._n_threads)
@@ -182,13 +186,13 @@ class EstimateRespiration(object):
                                                              cores=self._n_threads)
         elif self._args.ba_method == 'gac':
             # filter/pre-process image
-            filtered_image = self._process_slices_parallel(self._filter_adaptive_hist_eq,
-                                                           self._image.img,
-                                                           cores=self._n_threads)
-
-            #filtered_image = self._process_slices_parallel(self._filter_denoise,
+            #filtered_image = self._process_slices_parallel(self._filter_adaptive_hist_eq,
             #                                               self._image.img,
             #                                               cores=self._n_threads)
+
+            filtered_image = self._process_slices_parallel(self._filter_denoise,
+                                                           self._image.img,
+                                                           cores=self._n_threads)
 
             filtered_image = self._process_slices_parallel(self._filter_median,
                                                            filtered_image,
@@ -286,7 +290,7 @@ class EstimateRespiration(object):
         return exposure.equalize_adapthist(img.astype('uint16'), clip_limit=0.02)
 
     @staticmethod
-    def _segment_cv(img, init_level_set, iterations=300):
+    def _segment_cv(img, init_level_set, iterations=100):
         """
         refines initial segmentation contours using chan vese segmentation model
         :param img: slice to segment:
@@ -303,7 +307,7 @@ class EstimateRespiration(object):
                                                     )
 
     @staticmethod
-    def _segment_gac(img, init_level_set, iterations=300):
+    def _segment_gac(img, init_level_set, iterations=100):
         """
         refines initial segmentation contours using geodesic active contours
         :param imgs: list of 2 images [2D] imgs[0] = slice to segment: imgs[1] = initial level set
@@ -313,8 +317,8 @@ class EstimateRespiration(object):
         return segmentation.morphological_geodesic_active_contour(img,
                                                                   iterations,
                                                                   init_level_set=init_level_set,
-                                                                  smoothing=3,
-                                                                  balloon=1.1
+                                                                  smoothing=4,
+                                                                  balloon=0.5
                                                                   )
 
     @staticmethod
