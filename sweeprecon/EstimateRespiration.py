@@ -172,7 +172,7 @@ class EstimateRespiration(object):
                                                            self._image.img,
                                                            cores=self._n_threads)
 
-            filtered_image = self._process_slices_parallel(self._filter_denoise,
+            filtered_image = self._process_slices_parallel(self._filter_median,
                                                            self._image.img,
                                                            cores=self._n_threads)
 
@@ -186,13 +186,13 @@ class EstimateRespiration(object):
                                                            self._image.img,
                                                            cores=self._n_threads)
 
-            filtered_image = self._process_slices_parallel(self._filter_denoise,
-                                                           self._image.img,
-                                                           cores=self._n_threads)
+            #filtered_image = self._process_slices_parallel(self._filter_denoise,
+            #                                               self._image.img,
+            #                                               cores=self._n_threads)
 
-            # filtered_image = self._process_slices_parallel(self._filter_median,
-            #                                                filtered_image,
-            #                                                cores=self._n_threads)
+            filtered_image = self._process_slices_parallel(self._filter_median,
+                                                           filtered_image,
+                                                           cores=self._n_threads)
 
             filtered_image = self._process_slices_parallel(self._filter_inv_gauss,
                                                            filtered_image,
@@ -257,7 +257,7 @@ class EstimateRespiration(object):
         return medfilt2d(img, [kernel_size, kernel_size])  # median filter more robust to bands in balanced images
 
     @staticmethod
-    def _filter_denoise(img, weight=0.008):
+    def _filter_denoise(img, weight=0.001):
         """
         TV denoising
         :param imgs: slice to denoise [2D]
@@ -283,7 +283,7 @@ class EstimateRespiration(object):
         :param imgs: slice to equalise [2D]
         :return:
         """
-        return exposure.equalize_adapthist(img.astype('uint16'), clip_limit=0.03)
+        return exposure.equalize_adapthist(img.astype('uint16'), clip_limit=0.02)
 
     @staticmethod
     def _segment_cv(img, init_level_set, iterations=300):
@@ -298,8 +298,8 @@ class EstimateRespiration(object):
                                                     iterations,
                                                     init_level_set=init_level_set,
                                                     smoothing=9,
-                                                    lambda1=1.2,
-                                                    lambda2=0.2
+                                                    lambda1=2.5,
+                                                    lambda2=0.5
                                                     )
 
     @staticmethod
