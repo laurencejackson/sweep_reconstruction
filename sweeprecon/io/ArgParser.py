@@ -74,6 +74,7 @@ class ArgParser(object):
 
     def add_slice_thickness(self,
                             option_string=("-z", "--thickness"),
+                            metavar='',
                             help="thickness of acquired slice [mm]",
                             required=False,
                             default=2.5,
@@ -83,6 +84,7 @@ class ArgParser(object):
 
     def add_crop_fraction(self,
                           option_string=("-cf", "--crop_fraction"),
+                          metavar='',
                           help="fraction of image cropped to segment body area for respiration",
                           required=False,
                           default=0.4,
@@ -92,6 +94,7 @@ class ArgParser(object):
 
     def add_ba_method(self,
                       option_string=("-ba", "--ba_method"),
+                      metavar='',
                       help="method for segmentation body area (gac or cv)",
                       required=False,
                       default='gac',
@@ -101,6 +104,7 @@ class ArgParser(object):
 
     def add_n_resp_states(self,
                           option_string=("-n", "--nstates"),
+                          metavar='',
                           help="number of respiration states",
                           required=False,
                           default=4,
@@ -110,6 +114,7 @@ class ArgParser(object):
 
     def add_interpolator(self,
                          option_string=("-x", "--interpolator"),
+                         metavar='',
                          help="choose interpolater to use [options: 'fast_linear' or 'rbf']",
                          required=False,
                          default='fast_linear'
@@ -118,6 +123,7 @@ class ArgParser(object):
 
     def add_kernel_dims(self,
                         option_string=("-k", "--kernel_dims"),
+                        metavar='',
                         help="Size of interpolation kernel (recommended values 2->4) [default: 2]",
                         required=False,
                         type=int,
@@ -127,6 +133,7 @@ class ArgParser(object):
 
     def add_n_threads(self,
                       option_string=("-t", "--n_threads"),
+                      metavar='',
                       help="number of processor threads to use [default: max(1, N_cpu - 1)]",
                       required=False,
                       type=int,
