@@ -211,7 +211,7 @@ class EstimateRespiration(object):
 
         elif self._args.ba_method == 'edge':
 
-            filtered_image = self._process_slices_parallel(self._filter_denoise,
+            filtered_image = self._process_slices_parallel(self._filter_median,
                                                            self._image.img,
                                                            cores=self._n_threads)
 
@@ -278,7 +278,7 @@ class EstimateRespiration(object):
         return medfilt2d(img, [kernel_size, kernel_size])  # median filter more robust to bands in balanced images
 
     @staticmethod
-    def _filter_denoise(img, weight=0.0008):
+    def _filter_denoise(img, weight=0.003):
         """
         TV denoising
         :param imgs: slice to denoise [2D]
