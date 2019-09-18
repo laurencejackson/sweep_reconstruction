@@ -202,23 +202,17 @@ class EstimateRespiration(object):
                                                            filtered_image,
                                                            cores=self._n_threads)
 
+            # save filtered image
+            self._image_refined.set_data(filtered_image)
+            self._image_refined.write_nii(self._write_paths.path_filtered_contours())
+
             refined_contours = self._process_slices_parallel(self._segment_gac,
                                                              filtered_image,
                                                              self._image_initialised.img,
                                                              cores=self._n_threads)
 
-            import matplotlib
-            matplotlib.use('Qt5Agg')
-            import matplotlib.pyplot as plt
-            plt.imshow(filtered_image[:, :, 100])
-            plt.show()
-
         else:
             print('invalid body area method')
-
-        # save filtered image
-        self._image_refined.set_data(filtered_image)
-        self._image_refined.write_nii(self._write_paths.path_filtered_contours())
 
         # invert mask
         refined_contours = (refined_contours == 0) * 1
