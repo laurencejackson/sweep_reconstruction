@@ -272,19 +272,11 @@ class EstimateRespiration(object):
 
     def _median_filter(self, k=19):
         """Removes low frequency variation using a median filter"""
-        self.resp_trace = self.resp_raw - medfilt(self.resp_raw, kernel_size=k)
+        self.resp_trend = medfilt(self.resp_raw, kernel_size=k)
+        self.resp_trace = self.resp_raw - self.resp_trend
 
     # ___________________________________________________________________
     # __________________________ Static Methods__________________________
-
-    @staticmethod
-    def _butter_bandpass(lowcut, highcut, fs, order=5):
-        """Butterworth bandpass filter"""
-        nyq = 0.5 * fs
-        low = lowcut / nyq
-        high = highcut / nyq
-        b, a = butter(order, low, btype='lowpass')
-        return b, a
 
     @ staticmethod
     def _filter_median(img, kernel_size=5):
