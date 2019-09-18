@@ -12,7 +12,7 @@ import sweeprecon.utilities.PlotFigures as PlotFigures
 
 from multiprocessing import Pool, cpu_count
 from scipy.ndimage import gaussian_filter, morphology, binary_fill_holes
-from scipy.signal import medfilt2d
+from scipy.signal import medfilt2d, butter, medfilt
 from skimage import restoration, measure, segmentation, exposure, feature, filters
 from skimage import morphology as morphology_skimage
 from sklearn.gaussian_process import GaussianProcessRegressor
@@ -76,7 +76,8 @@ class EstimateRespiration(object):
 
         print('Extracting respiration...')
         self._sum_mask_data()
-        self._gpr_filter()
+        #self._gpr_filter()
+        self._median_filter()
 
     def _auto_crop(self, resp_min=0.15, resp_max=0.4):
         """
@@ -257,8 +258,8 @@ class EstimateRespiration(object):
         """Removes low frequency global changes in body area to extract respiration trace only"""
 
         # define GPR kernel
-        kernel = 1.0 * RBF(length_scale=8.0, length_scale_bounds=(4, 20)) \
-                 + WhiteKernel(noise_level=50, noise_level_bounds=(10, 1e+3))
+        kernel = 1.0 * RBF(length_scale=10.0, length_scale_bounds=(5, 15)) \
+                 + WhiteKernel(noise_level=100, noise_level_bounds=(10, 10e+3))
 
         # fit GPR model
         X = np.arange(self.resp_raw.shape[0]).reshape(-1, 1)
@@ -269,8 +270,21 @@ class EstimateRespiration(object):
         self.resp_trend, y_cov = gp.predict(X, return_cov=True)
         self.resp_trace = self.resp_raw - self.resp_trend
 
+    def _median_filter(self, k=19):
+        """Removes low frequency variation using a median filter"""
+        self.resp_trace = self.resp_raw - medfilt(self.resp_raw, kernel_size=k)
+
     # ___________________________________________________________________
     # __________________________ Static Methods__________________________
+
+    @staticmethod
+    def _butter_bandpass(lowcut, highcut, fs, order=5):
+        """Butterworth bandpass filter"""
+        nyq = 0.5 * fs
+        low = lowcut / nyq
+        high = highcut / nyq
+        b, a = butter(order, low, btype='lowpass')
+        return b, a
 
     @ staticmethod
     def _filter_median(img, kernel_size=5):
