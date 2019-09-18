@@ -186,17 +186,17 @@ class EstimateRespiration(object):
                                                              cores=self._n_threads)
         elif self._args.ba_method == 'gac':
             # filter/pre-process image
-            #filtered_image = self._process_slices_parallel(self._filter_adaptive_hist_eq,
-            #                                               self._image.img,
-            #                                               cores=self._n_threads)
+            filtered_image = self._process_slices_parallel(self._filter_adaptive_hist_eq,
+                                                           self._image.img,
+                                                           cores=self._n_threads)
 
             filtered_image = self._process_slices_parallel(self._filter_denoise,
                                                            self._image.img,
                                                            cores=self._n_threads)
 
-            filtered_image = self._process_slices_parallel(self._filter_median,
-                                                           filtered_image,
-                                                           cores=self._n_threads)
+            #filtered_image = self._process_slices_parallel(self._filter_median,
+            #                                               filtered_image,
+            #                                               cores=self._n_threads)
 
             filtered_image = self._process_slices_parallel(self._filter_inv_gauss,
                                                            filtered_image,
@@ -206,6 +206,13 @@ class EstimateRespiration(object):
                                                              filtered_image,
                                                              self._image_initialised.img,
                                                              cores=self._n_threads)
+
+            import matplotlib
+            matplotlib.use('Qt5Agg')
+            import matplotlib.pyplot as plt
+            plt.imshow(filtered_image[:, :, 100])
+            plt.show()
+
         else:
             print('invalid body area method')
 
@@ -261,7 +268,7 @@ class EstimateRespiration(object):
         return medfilt2d(img, [kernel_size, kernel_size])  # median filter more robust to bands in balanced images
 
     @staticmethod
-    def _filter_denoise(img, weight=0.001):
+    def _filter_denoise(img, weight=0.0008):
         """
         TV denoising
         :param imgs: slice to denoise [2D]
@@ -271,7 +278,7 @@ class EstimateRespiration(object):
         return restoration.denoise_tv_bregman(img, weight=weight)
 
     @staticmethod
-    def _filter_inv_gauss(img, alpha=8, sigma=1.1):
+    def _filter_inv_gauss(img, alpha=10, sigma=1.5):
         """
         TV denoising
         :param imgs: slice to denoise [2D]
@@ -302,8 +309,8 @@ class EstimateRespiration(object):
                                                     iterations,
                                                     init_level_set=init_level_set,
                                                     smoothing=9,
-                                                    lambda1=2.5,
-                                                    lambda2=0.5
+                                                    lambda1=0.5,
+                                                    lambda2=1.5
                                                     )
 
     @staticmethod
@@ -318,7 +325,7 @@ class EstimateRespiration(object):
                                                                   iterations,
                                                                   init_level_set=init_level_set,
                                                                   smoothing=4,
-                                                                  balloon=0.5
+                                                                  balloon=2.5
                                                                   )
 
     @staticmethod
