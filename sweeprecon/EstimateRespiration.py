@@ -192,9 +192,9 @@ class EstimateRespiration(object):
                                                            self._image.img,
                                                            cores=self._n_threads)
 
-            filtered_image = self._process_slices_parallel(self._filter_denoise,
-                                                           self._image.img,
-                                                           cores=self._n_threads)
+            #filtered_image = self._process_slices_parallel(self._filter_denoise,
+            #                                               self._image.img,
+            #                                               cores=self._n_threads)
 
             filtered_image = self._process_slices_parallel(self._filter_median,
                                                            filtered_image,
@@ -215,13 +215,18 @@ class EstimateRespiration(object):
                                                            self._image.img,
                                                            cores=self._n_threads)
 
-            edge_image = self._process_slices_parallel(self._filter_canny,
+            filtered_image = self._process_slices_parallel(self._filter_canny,
                                                            filtered_image,
                                                            cores=self._n_threads)
 
             refined_contours = self._process_slices_parallel(self._segment_flood,
-                                                             edge_image,
+                                                             filtered_image,
                                                              cores=self._n_threads)
+            #import matplotlib
+            #matplotlib.use('Qt5Agg')
+            #import matplotlib.pyplot as plt
+            #plt.imshow(filtered_image[:,:,100])
+            #plt.show()
 
         else:
             raise AssertionError('invalid body area method')
@@ -288,7 +293,7 @@ class EstimateRespiration(object):
         return restoration.denoise_tv_bregman(img, weight=weight)
 
     @staticmethod
-    def _filter_inv_gauss(img, alpha=100, sigma=1.0):
+    def _filter_inv_gauss(img, alpha=50, sigma=1.3):
         """
         TV denoising
         :param imgs: image to denoise [2D]
@@ -313,7 +318,7 @@ class EstimateRespiration(object):
         :param imgs: image to filter [2D]
         :return:
         """
-        return feature.canny(img, sigma=1.5, low_threshold=0.1, high_threshold=0.7, use_quantiles=True)
+        return feature.canny(img, sigma=5.0, low_threshold=0.6, high_threshold=0.9, use_quantiles=True)
 
     @staticmethod
     def _segment_flood(img):
