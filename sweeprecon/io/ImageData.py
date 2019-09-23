@@ -88,8 +88,8 @@ class ImageData(object):
         """
 
         if rect is None:
-            print("Cropping region not defined - no crop performed")
-            return
+            print("rect not defined defaulting to full FOV")
+            rect = np.array([[0, 0], [self.img.shape[1], self.img.shape[0]]], dtype=int)
 
         if crop_t is not None:
             self.set_data(self.img[:, :, :, crop_t])

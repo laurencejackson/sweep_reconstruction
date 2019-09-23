@@ -12,7 +12,7 @@ import sweeprecon.utilities.PlotFigures as PlotFigures
 
 from multiprocessing import Pool, cpu_count
 from scipy.ndimage import gaussian_filter, morphology, binary_fill_holes
-from scipy.signal import medfilt2d, butter, medfilt
+from scipy.signal import medfilt2d, medfilt
 from skimage import restoration, measure, segmentation, exposure, feature, filters
 from skimage import morphology as morphology_skimage
 from sklearn.gaussian_process import GaussianProcessRegressor
@@ -76,7 +76,7 @@ class EstimateRespiration(object):
 
         print('Extracting respiration...')
         self._sum_mask_data()
-        #self._gpr_filter()
+        # self._gpr_filter()
         self._median_filter()
 
     def _auto_crop(self, resp_min=0.15, resp_max=0.4):
@@ -164,7 +164,7 @@ class EstimateRespiration(object):
         self._image_initialised.write_nii(self._write_paths.path_initialised_contours())
 
     def _refine_boundaries(self):
-        """Refines body area estimates using Chan-Vese active contour model"""
+        """Refines body area estimates using active contour model"""
 
         # refine segmentation
         print('Contour refinement method: %s' % self._args.ba_method)
@@ -178,10 +178,6 @@ class EstimateRespiration(object):
                                                            self._image.img,
                                                            cores=self._n_threads)
 
-            #filtered_image = self._process_slices_parallel(self._filter_median,
-            #                                               self._image.img,
-            #                                               cores=self._n_threads)
-
             refined_contours = self._process_slices_parallel(self._segment_cv,
                                                              filtered_image,
                                                              self._image_initialised.img,
@@ -193,10 +189,6 @@ class EstimateRespiration(object):
                                                            self._image.img,
                                                            cores=self._n_threads)
 
-            #filtered_image = self._process_slices_parallel(self._filter_denoise,
-            #                                               self._image.img,
-            #                                               cores=self._n_threads)
-
             filtered_image = self._process_slices_parallel(self._filter_median,
                                                            filtered_image,
                                                            cores=self._n_threads)
@@ -204,30 +196,12 @@ class EstimateRespiration(object):
             filtered_image = self._process_slices_parallel(self._filter_inv_gauss,
                                                            filtered_image,
                                                            cores=self._n_threads)
+
             # refine contours
             refined_contours = self._process_slices_parallel(self._segment_gac,
                                                              filtered_image,
                                                              self._image_initialised.img,
                                                              cores=self._n_threads)
-
-        elif self._args.ba_method == 'edge':
-
-            filtered_image = self._process_slices_parallel(self._filter_median,
-                                                           self._image.img,
-                                                           cores=self._n_threads)
-
-            filtered_image = self._process_slices_parallel(self._filter_canny,
-                                                           filtered_image,
-                                                           cores=self._n_threads)
-
-            refined_contours = self._process_slices_parallel(self._segment_flood,
-                                                             filtered_image,
-                                                             cores=self._n_threads)
-            #import matplotlib
-            #matplotlib.use('Qt5Agg')
-            #import matplotlib.pyplot as plt
-            #plt.imshow(filtered_image[:,:,100])
-            #plt.show()
 
         else:
             raise AssertionError('invalid body area method')
@@ -243,7 +217,7 @@ class EstimateRespiration(object):
         self._image_refined.set_data(refined_contours)
 
         # take 10% off upper and lower edges
-        cropval = int(0.1 * refined_contours.shape[1])
+        cropval = int(0.15 * refined_contours.shape[1])
         rect = np.array([[0 + cropval, 0], [refined_contours.shape[1]-1-cropval, refined_contours.shape[0]]], dtype=int)
         self._image_refined.square_crop(rect=rect)
 
@@ -279,7 +253,7 @@ class EstimateRespiration(object):
     # __________________________ Static Methods__________________________
 
     @ staticmethod
-    def _filter_median(img, kernel_size=5):
+    def _filter_median(img, kernel_size=9):
         """
         Median filter
         :param imgs: slice to filter [2D]
@@ -299,7 +273,7 @@ class EstimateRespiration(object):
         return restoration.denoise_tv_bregman(img, weight=weight)
 
     @staticmethod
-    def _filter_inv_gauss(img, alpha=50, sigma=1.3):
+    def _filter_inv_gauss(img, alpha=120, sigma=1.6):
         """
         TV denoising
         :param imgs: image to denoise [2D]
@@ -309,34 +283,13 @@ class EstimateRespiration(object):
         return segmentation.inverse_gaussian_gradient(img, alpha=alpha, sigma=sigma)
 
     @staticmethod
-    def _filter_adaptive_hist_eq(img):
+    def _filter_adaptive_hist_eq(img, clip_limit=0.1):
         """
         adaptive histogram equalisation
         :param imgs: image to equalise [2D]
         :return:
         """
-        return exposure.equalize_adapthist(img.astype('uint16'), clip_limit=0.02)
-
-    @staticmethod
-    def _filter_canny(img):
-        """
-        canny edge detection
-        :param imgs: image to filter [2D]
-        :return:
-        """
-        return feature.canny(img, sigma=5.0, low_threshold=0.6, high_threshold=0.9, use_quantiles=True)
-
-    @staticmethod
-    def _segment_flood(img):
-        """
-        adaptive histogram equalisation
-        :param imgs: slice to equalise [2D]
-        :return:
-        """
-        img = filters.gaussian(img.astype(int))
-        seg_ant = segmentation.flood(img, (1, 2), selem=morphology_skimage.selem.disk(1))
-        seg_post = segmentation.flood(img, (img.shape[0] - 1, 0), selem=morphology_skimage.selem.disk(1))
-        return seg_ant + seg_post
+        return exposure.equalize_adapthist(img.astype('uint16'), clip_limit=clip_limit)
 
     @staticmethod
     def _segment_cv(img, init_level_set, iterations=100):
@@ -356,7 +309,7 @@ class EstimateRespiration(object):
                                                     )
 
     @staticmethod
-    def _segment_gac(img, init_level_set, iterations=300):
+    def _segment_gac(img, init_level_set, iterations=100):
         """
         refines initial segmentation contours using geodesic active contours
         :param imgs: list of 2 images [2D] imgs[0] = slice to segment: imgs[1] = initial level set
@@ -366,8 +319,8 @@ class EstimateRespiration(object):
         return segmentation.morphological_geodesic_active_contour(img,
                                                                   iterations,
                                                                   init_level_set=init_level_set,
-                                                                  smoothing=6,
-                                                                  balloon=2.5
+                                                                  smoothing=8,
+                                                                  balloon=1.0
                                                                   )
 
     @staticmethod

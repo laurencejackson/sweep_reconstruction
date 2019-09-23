@@ -10,7 +10,6 @@ import numpy as np
 import subprocess
 
 from skimage.filters import frangi
-
 from sweeprecon.io.ImageData import ImageData
 
 
