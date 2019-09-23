@@ -61,4 +61,5 @@ target/
 .idea/
 idea/
 test_dump/
-optimisation/*
+optimisation/data/
+.ipynb_checkpoints
