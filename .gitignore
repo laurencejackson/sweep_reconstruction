@@ -62,4 +62,6 @@ target/
 idea/
 test_dump/
 optimisation/data/
+
+# ipynb ignores
 .ipynb_checkpoints

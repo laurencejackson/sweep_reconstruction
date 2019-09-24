@@ -22,6 +22,7 @@ class ImageData(object):
 
         self.nii = nib.load(file_path)
         self.img = self.nii.get_fdata()  # default _img data to the existing data object
+        self._imagefilepath = file_path
 
     def get_data(self):
         """Returns image data as numpy array"""
@@ -69,6 +70,7 @@ class ImageData(object):
         print('Saving ' + path)
         nii = nib.Nifti1Image(self.img, self.nii.affine, self.nii.header)
         nib.save(nii, path)
+        self._imagefilepath = path
 
     def get_fs(self):
         """Estimates the sampling frequency in Hz from the NIfTI header"""

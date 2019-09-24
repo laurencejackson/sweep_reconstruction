@@ -13,8 +13,7 @@ import sweeprecon.utilities.PlotFigures as PlotFigures
 from multiprocessing import Pool, cpu_count
 from scipy.ndimage import gaussian_filter, morphology, binary_fill_holes
 from scipy.signal import medfilt2d, medfilt
-from skimage import restoration, measure, segmentation, exposure, feature, filters
-from skimage import morphology as morphology_skimage
+from skimage import restoration, measure, segmentation, exposure
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 
