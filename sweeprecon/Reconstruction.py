@@ -194,7 +194,7 @@ class Reconstruction(object):
 
         for nx, xi in enumerate(xlocs):
             for ny, yi in enumerate(ylocs):
-                patch_ind = ny + (nx * [xlocs].__len__())
+                patch_ind = ny + (nx * xlocs.__len__())
                 pixel_region = (xi, yi, zloc, self._args.patchsize[0], self._args.patchsize[1], zsize)
                 pixel_region = [str(i) for i in pixel_region]  # convert to string list
                 command_string = 'mirtk extract-image-region ' + \
@@ -203,7 +203,7 @@ class Reconstruction(object):
                                  ' -patch ' + ' '.join(pixel_region)
 
                 print(command_string)
-                subprocess.run(command_string.split())
+                #subprocess.run(command_string.split())
 
     def _extract_patches_internal(self, image, patch_size=None, patch_stride=None, target=False):
         """Extracts 2D patches with overlap and preserved geometry as NIfTI files"""
