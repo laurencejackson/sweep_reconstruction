@@ -152,11 +152,12 @@ class Reconstruction(object):
             "iterations": 1,
             "resolution": 0.75,
             "sr_iterations": 4,
-            "filter": 10,
+            # "filter": 10,
             "lastIter": 0.03,
             "delta": 400,
             "lambda": 0.035,
-            "ncc": True,
+            # "-cp_spacing": 5.0,
+            "ncc": False,
             "gaussian_only": False,
             "svr_only": True,
             "no_intensity_matching": True,
@@ -168,7 +169,8 @@ class Reconstruction(object):
     def _extract_patches(self, image, target=False):
         """Uses MIRTK extract-image-region function to extract patches"""
         # extract-image-region <input> <output> [options] -patch <i> <j> <k> <nx> [<ny> [<nz>]]
-
+        # normalise image intensity before splitting
+        self._normalise_intensity(image)
         # defaults to full image if given dimension is zero
         if self._args.patchsize[0] == 0:
             self._args.patchsize[0] = image.img.shape[0]
@@ -208,12 +210,18 @@ class Reconstruction(object):
                         tstring = ' -Rt1 ' + str(ti) + ' -Rt2 ' + str(ti)
 
                     command_string = 'mirtk extract-image-region ' + \
-                                     image._imagefilepath + ' ' + \
+                                     image.imagefilepath + ' ' + \
                                      self._write_paths.path_patch_img(patch_ind, '0', ww=nt, target=target) + \
                                      ' -patch ' + ' '.join(pixel_region) + \
                                      tstring
                     print(command_string)
                     subprocess.run(command_string.split())
+
+    def _normalise_intensity(self, image, scale=['0', '3000']):
+        """ Normalises intensity before patch splitting"""
+        command_string = 'mirtk convert-image ' + image.imagefilepath + ' ' + image.imagefilepath + ' -rescale ' + ' '.join(scale)
+        print(command_string)
+        subprocess.run(command_string.split())
 
     def _extract_patches_internal(self, image, patch_size=None, patch_stride=None, target=False):
         """Extracts 2D patches with overlap and preserved geometry as NIfTI files"""

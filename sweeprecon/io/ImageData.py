@@ -22,7 +22,7 @@ class ImageData(object):
 
         self.nii = nib.load(file_path)
         self.img = self.nii.get_fdata()  # default _img data to the existing data object
-        self._imagefilepath = file_path
+        self.imagefilepath = file_path
 
     def get_data(self):
         """Returns image data as numpy array"""
