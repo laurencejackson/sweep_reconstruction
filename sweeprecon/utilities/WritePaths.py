@@ -161,7 +161,7 @@ class WritePaths(object):
                             self._recon_folder,
                             basename,
                             'RECON_' +
-                            basename +
+                            basename + '_' +
                             str(ww) +
                             self._nii_ext
                             )
