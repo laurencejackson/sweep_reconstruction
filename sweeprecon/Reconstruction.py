@@ -157,12 +157,12 @@ class Reconstruction(object):
             "delta": 300,
             "lambda": 0.030,
             # "-cp_spacing": 5.0,
-            "ncc": False,
+            "ncc": True,
             "gaussian_only": False,
             "svr_only": True,
             "no_intensity_matching": True,
             "no_sr": False,
-            "no_robust_statistics": True,
+            "no_robust_statistics": False,
             "reg_log": False,
         }
 
