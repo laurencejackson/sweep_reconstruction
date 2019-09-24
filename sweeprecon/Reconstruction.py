@@ -219,6 +219,7 @@ class Reconstruction(object):
 
     def _normalise_intensity(self, image, scale=['0', '3000']):
         """ Normalises intensity before patch splitting"""
+        print('Normalising pixel values for %s' % image.imagefilepath)
         command_string = 'mirtk convert-image ' + image.imagefilepath + ' ' + image.imagefilepath + ' -rescale ' + ' '.join(scale)
         print(command_string)
         subprocess.run(command_string.split())
