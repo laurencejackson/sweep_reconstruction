@@ -171,39 +171,47 @@ class Reconstruction(object):
 
         # defaults to full image if given dimension is zero
         if self._args.patchsize[0] == 0:
-            self._args.patchsize[0] = self._image.img.shape[0]
-            xlocs = [int(self._image.img.shape[0]/2)]
+            self._args.patchsize[0] = image.img.shape[0]
+            xlocs = [int(image.img.shape[0]/2)]
         else:
             xlocs = np.arange(self._args.patchsize[0],
-                              self._image.img.shape[0] - self._args.patchsize[0],
+                              image.img.shape[0] - self._args.patchsize[0],
                               self._args.patchstride[0])
 
         if self._args.patchsize[1] == 0:
-            self._args.patchsize[1] = self._image.img.shape[1]
-            ylocs =[int(self._image.img.shape[1] / 2)]
+            self._args.patchsize[1] = image.img.shape[1]
+            ylocs =[int(image.img.shape[1] / 2)]
         else:
             ylocs = np.arange(self._args.patchsize[1],
-                              self._image.img.shape[1] - self._args.patchsize[1],
+                              image.img.shape[1] - self._args.patchsize[1],
                               self._args.patchstride[1])
 
         # TODO: handle when px defined but ps isnt
 
         # for now only patch in xy use full z depth
-        zloc = int(self._image.img.shape[2]/2)
-        zsize = self._image.img.shape[2]
+        zloc = int(image.img.shape[2]/2)
+        zsize = image.img.shape[2]
 
-        for nx, xi in enumerate(xlocs):
-            for ny, yi in enumerate(ylocs):
-                patch_ind = ny + (nx * xlocs.__len__())
-                pixel_region = (xi, yi, zloc, self._args.patchsize[0], self._args.patchsize[1], zsize)
-                pixel_region = [str(i) for i in pixel_region]  # convert to string list
-                command_string = 'mirtk extract-image-region ' + \
-                                 image._imagefilepath + ' ' + \
-                                 self._write_paths.path_patch_img(patch_ind, '0', ww=0, target=target) + \
-                                 ' -patch ' + ' '.join(pixel_region)
+        # define time axis
+        tloc = np.arange(0,  np.max(self._states))
+        tstring = ''
 
-                print(command_string)
-                subprocess.run(command_string.split())
+        for nt, ti in enumerate(tloc):
+            for nx, xi in enumerate(xlocs):
+                for ny, yi in enumerate(ylocs):
+                    patch_ind = ny + (nx * xlocs.__len__())
+                    pixel_region = (xi, yi, zloc, self._args.patchsize[0], self._args.patchsize[1], zsize)
+                    pixel_region = [str(i) for i in pixel_region]  # convert to string list
+                    if target:
+                        tstring = ' -Rt1 ' + str(ti) + ' -Rt2 ' + str(ti)
+
+                    command_string = 'mirtk extract-image-region ' + \
+                                     image._imagefilepath + ' ' + \
+                                     self._write_paths.path_patch_img(patch_ind, '0', ww=0, target=target) + \
+                                     ' -patch ' + ' '.join(pixel_region) + \
+                                     tstring
+                    print(command_string)
+                    subprocess.run(command_string.split())
 
     def _extract_patches_internal(self, image, patch_size=None, patch_stride=None, target=False):
         """Extracts 2D patches with overlap and preserved geometry as NIfTI files"""
