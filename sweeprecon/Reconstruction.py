@@ -203,7 +203,7 @@ class Reconstruction(object):
                                  ' -patch ' + ' '.join(pixel_region)
 
                 print(command_string)
-                #subprocess.run(command_string.split())
+                subprocess.run(command_string.split())
 
     def _extract_patches_internal(self, image, patch_size=None, patch_stride=None, target=False):
         """Extracts 2D patches with overlap and preserved geometry as NIfTI files"""
