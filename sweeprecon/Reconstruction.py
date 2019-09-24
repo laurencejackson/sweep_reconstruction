@@ -174,16 +174,16 @@ class Reconstruction(object):
             self._args.patchsize[0] = image.img.shape[0]
             xlocs = [int(image.img.shape[0]/2)]
         else:
-            xlocs = np.arange(self._args.patchsize[0],
-                              image.img.shape[0] - self._args.patchsize[0],
+            xlocs = np.arange(int(self._args.patchsize[0]/2),
+                              image.img.shape[0] - int(self._args.patchsize[0]/2),
                               self._args.patchstride[0])
 
         if self._args.patchsize[1] == 0:
             self._args.patchsize[1] = image.img.shape[1]
             ylocs =[int(image.img.shape[1] / 2)]
         else:
-            ylocs = np.arange(self._args.patchsize[1],
-                              image.img.shape[1] - self._args.patchsize[1],
+            ylocs = np.arange(int(self._args.patchsize[1]/2),
+                              image.img.shape[1] - int(self._args.patchsize[1]/2),
                               self._args.patchstride[1])
 
         # TODO: handle when px defined but ps isnt
@@ -209,7 +209,7 @@ class Reconstruction(object):
 
                     command_string = 'mirtk extract-image-region ' + \
                                      image._imagefilepath + ' ' + \
-                                     self._write_paths.path_patch_img(patch_ind, '0', ww=0, target=target) + \
+                                     self._write_paths.path_patch_img(patch_ind, '0', ww=nt, target=target) + \
                                      ' -patch ' + ' '.join(pixel_region) + \
                                      tstring
                     print(command_string)
