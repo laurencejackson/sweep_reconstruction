@@ -186,6 +186,8 @@ class Reconstruction(object):
                               self._image.img.shape[1] - self._args.patchsize[1],
                               self._args.patchstride[1])
 
+        # TODO: handle when px defined but ps isnt
+
         # for now only patch in xy use full z depth
         zloc = int(self._image.img.shape[2]/2)
         zsize = self._image.img.shape[2]
@@ -193,7 +195,7 @@ class Reconstruction(object):
         for nx, xi in enumerate([xlocs]):
             for ny, yi in enumerate([ylocs]):
                 patch_ind = ny + (nx * [xlocs].__len__())
-                pixel_region = (xi, yi, zloc, self._args.patchsize[0], self._args.patchsize[1], zsize)
+                pixel_region = (xlocs[nx], ylocs[ny], zloc, self._args.patchsize[0], self._args.patchsize[1], zsize)
                 pixel_region = [str(i) for i in pixel_region]  # convert to string list
                 command_string = 'mirtk extract-image-region ' + \
                                  image._imagefilepath + ' ' + \
