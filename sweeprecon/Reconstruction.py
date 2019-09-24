@@ -8,6 +8,7 @@ import os
 import copy
 import numpy as np
 import subprocess
+import shutil
 
 from skimage.filters import frangi
 from sweeprecon.io.ImageData import ImageData
@@ -43,6 +44,9 @@ class Reconstruction(object):
     def run(self):
         """Runs reconstruction pipeline"""
         if self._patches:
+            if os.path.isdir(self._write_paths._patches_folder):
+                print('removing existing patches')
+                shutil.rmtree(self._write_paths._patches_folder)
             print('Extracting patches')
             self._extract_patches(self._image, target=False)
             self._extract_patches(self._target, target=True)
