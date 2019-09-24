@@ -193,10 +193,12 @@ class Reconstruction(object):
         zsize = image.img.shape[2]
 
         # define time axis
-        tloc = np.arange(0,  np.max(self._states))
         tstring = ''
+        tlocs = [0]
+        if target:
+            tlocs = np.arange(0,  np.max(self._states))
 
-        for nt, ti in enumerate(tloc):
+        for nt, ti in enumerate(tlocs):
             for nx, xi in enumerate(xlocs):
                 for ny, yi in enumerate(ylocs):
                     patch_ind = ny + (nx * xlocs.__len__())
