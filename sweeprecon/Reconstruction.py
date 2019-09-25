@@ -159,7 +159,7 @@ class Reconstruction(object):
             # "-cp_spacing": 5.0,
             "ncc": True,
             "gaussian_only": False,
-            "svr_only": False,
+            "svr_only": True,
             "no_intensity_matching": True,
             "no_sr": False,
             "no_robust_statistics": True,
