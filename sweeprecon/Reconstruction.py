@@ -194,7 +194,7 @@ class Reconstruction(object):
         zlocs = int(image.img.shape[2]/2)
         zsize = image.img.shape[2]
 
-        self._npatches = xlocs.__len__() * ylocs.__len__() * zlocs.__len__()
+        self._npatches = xlocs.__len__() * ylocs.__len__() * zlocs
 
         # define time axis
         tstring = ''
