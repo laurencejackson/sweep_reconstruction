@@ -37,6 +37,10 @@ def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summa
                            width_ratios=[2, 1], height_ratios=[1, 1, 1], figure=fig)
 
     ax1 = plt.subplot(gs[0])
+    near_min = 1.1 * np.quantile(img_sum, 0.1)
+    near_max = 1.1 * np.quantile(img_sum, 0.9)
+    ax1.set_ylim(near_min, near_max)
+
     ax1.set_title('Raw body area')
     ax1.scatter(range(0, img_sum.shape[0]), img_sum, marker=".", c='r', s=1)
     ax1.plot(range(0, img_sum.shape[0]), y_mean, c='k')
@@ -57,6 +61,9 @@ def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summa
     ax1.add_patch(rect)
 
     ax3 = plt.subplot(gs[2])
+    near_min = 1.1 * np.quantile(resp, 0.1)
+    near_max = 1.1 * np.quantile(resp, 0.9)
+    ax1.set_ylim(near_min, near_max)
     ax3.set_title('Filtered respiration')
     ax3.plot(range(0, resp.shape[0]), resp, c='k', linewidth=0.5, zorder=1)
     ax3.scatter(range(0, resp.shape[0]), resp, marker=".", c='r', s=1, zorder=2)
@@ -77,6 +84,9 @@ def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summa
     ax3.add_patch(rect)
 
     ax5 = plt.subplot(gs[4])
+    near_min = 1.1 * np.quantile(resp, 0.1)
+    near_max = 1.1 * np.quantile(resp, 0.9)
+    ax1.set_ylim(near_min, near_max)
     ax5.set_title('Classification')
     ax5.plot(range(0, resp.shape[0]), resp, c='k', linewidth=0.5, zorder=5)
     ax5.scatter(range(0, resp.shape[0]), resp, c=sts, s=50, zorder=10)
