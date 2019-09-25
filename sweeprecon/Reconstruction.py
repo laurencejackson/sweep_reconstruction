@@ -191,8 +191,10 @@ class Reconstruction(object):
         # TODO: handle when px defined but ps isnt
 
         # for now only patch in xy use full z depth
-        zloc = int(image.img.shape[2]/2)
+        zlocs = int(image.img.shape[2]/2)
         zsize = image.img.shape[2]
+
+        self._npatches = xlocs.__len__() * ylocs.__len__() * zlocs.__len__()
 
         # define time axis
         tstring = ''
@@ -204,7 +206,7 @@ class Reconstruction(object):
             for nx, xi in enumerate(xlocs):
                 for ny, yi in enumerate(ylocs):
                     patch_ind = ny + (nx * xlocs.__len__())
-                    pixel_region = (xi, yi, zloc, self._args.patchsize[0], self._args.patchsize[1], zsize)
+                    pixel_region = (xi, yi, zlocs, self._args.patchsize[0], self._args.patchsize[1], zsize)
                     pixel_region = [str(i) for i in pixel_region]  # convert to string list
                     if target:
                         tstring = ' -Rt1 ' + str(ti) + ' -Rt2 ' + str(ti)
