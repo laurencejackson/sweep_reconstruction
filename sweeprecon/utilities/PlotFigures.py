@@ -5,7 +5,7 @@ Laurence Jackson, BME, KCL, 2019
 """
 
 import matplotlib
-matplotlib.use('Agg')  # use agg backend to prevent figure plotting - no need for x11 permissions when running remotely
+#matplotlib.use('Agg')  # use agg backend to prevent figure plotting - no need for x11 permissions when running remotely
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.gridspec as gridspec
@@ -37,9 +37,8 @@ def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summa
                            width_ratios=[2, 1], height_ratios=[1, 1, 1], figure=fig)
 
     ax1 = plt.subplot(gs[0])
-    near_min = 1.1 * np.quantile(img_sum, 0.1)
-    near_max = 1.1 * np.quantile(img_sum, 0.9)
-    ax1.set_ylim(near_min, near_max)
+    qq = get_expand_ylim(img_sum, 0.1, 0.9, edge_factor=0.15)
+    ax1.set_ylim(qq[0], qq[1])
 
     ax1.set_title('Raw body area')
     ax1.scatter(range(0, img_sum.shape[0]), img_sum, marker=".", c='r', s=1)
@@ -55,15 +54,14 @@ def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summa
         range(img_sum.shape[0] - int(0.2 * img_sum.shape[0]), img_sum.shape[0] - int(0.1 * img_sum.shape[0]))]
     ax2.set_xlim([np.min(extractx), np.max(extractx)])
     ax2.set_ylim([np.min(extracty) - 50, np.max(extracty) + 50])
-    rect = patches.Rectangle((np.min(extractx), np.min(extracty)- 50), (np.max(extractx) - np.min(extractx)),
+    rect = patches.Rectangle((np.min(extractx), np.min(extracty) - 50), (np.max(extractx) - np.min(extractx)),
                              ((np.max(extracty) + 50) - (np.min(extracty) - 50)), linewidth=1, edgecolor='k',
                              facecolor='none')
     ax1.add_patch(rect)
 
     ax3 = plt.subplot(gs[2])
-    near_min = 1.1 * np.quantile(resp, 0.1)
-    near_max = 1.1 * np.quantile(resp, 0.9)
-    ax1.set_ylim(near_min, near_max)
+    qq = get_expand_ylim(resp, 0.1, 0.9, edge_factor=0.15)
+    ax3.set_ylim(qq[0], qq[1])
     ax3.set_title('Filtered respiration')
     ax3.plot(range(0, resp.shape[0]), resp, c='k', linewidth=0.5, zorder=1)
     ax3.scatter(range(0, resp.shape[0]), resp, marker=".", c='r', s=1, zorder=2)
@@ -84,9 +82,8 @@ def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summa
     ax3.add_patch(rect)
 
     ax5 = plt.subplot(gs[4])
-    near_min = 1.1 * np.quantile(resp, 0.1)
-    near_max = 1.1 * np.quantile(resp, 0.9)
-    ax1.set_ylim(near_min, near_max)
+    qq = get_expand_ylim(resp, 0.1, 0.9, edge_factor=0.15)
+    ax5.set_ylim(qq[0], qq[1])
     ax5.set_title('Classification')
     ax5.plot(range(0, resp.shape[0]), resp, c='k', linewidth=0.5, zorder=5)
     ax5.scatter(range(0, resp.shape[0]), resp, c=sts, s=50, zorder=10)
@@ -110,3 +107,17 @@ def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summa
 
     plt.savefig('fig_respiration_summary', dpi=300)
     plt.close(fig)
+
+
+def get_expand_ylim(data, qlo, qhi, edge_factor=0.15):
+    """ get ylim for quartile range + edge_factor"""
+
+    yy_hi = (1 + edge_factor) * np.quantile(data, qhi)
+    yy_lo_q = np.quantile(data, qlo)
+
+    if yy_lo_q < 0:
+        yy_lo = (1 + edge_factor) * yy_lo_q
+    else:
+        yy_lo = (1 - edge_factor) * yy_lo_q
+
+    return [yy_lo, yy_hi]
