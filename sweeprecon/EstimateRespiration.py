@@ -250,24 +250,24 @@ class EstimateRespiration(object):
         self.resp_trend = medfilt(self.resp_raw, kernel_size=k)
         self.resp_trace = self.resp_raw - self.resp_trend
 
-    def _lowess_ag(self, filt_time_s=10, iter=5):
+    def _lowess_ag(self, filt_dist_mm=10, iter=5):
         """lowess(x, y, f=2./3., iter=3) -> yest
         Lowess smoother: Robust locally weighted regression.
         The lowess function fits a nonparametric regression curve to a scatterplot.
         The arrays x and y contain an equal number of elements; each pair
         (x[i], y[i]) defines a data point in the scatterplot. The function returns
         the estimated (smooth) values of y.
-        The smoothing span is given by f. A larger value for f will result in a
-        smoother curve. The number of robustifying iterations is given by iter. The
-        function will run faster with a smaller number of iterations.
+        The smoothing span is given by filt_time_s, the duration of the kernel in seconds.
+        A larger value for filt_time_s will result in a smoother curve. The number of
+        robustifying iterations is given by iter.
         """
 
-        fs = self._image.get_fs()
-        r = ceil(filt_time_s / (1/fs))
+        kern = ceil(filt_dist_mm / self._image.nii.header["pixdim"][3])
         y = self.resp_raw
         x = np.arange(0, self.resp_raw.shape[0])
+
         n = len(x)
-        # r = int(ceil(f * n))
+        r = min(n-1, kern)
         h = [np.sort(np.abs(x - x[i]))[r] for i in range(n)]
         w = np.clip(np.abs((x[:, None] - x[None, :]) / h), 0.0, 1.0)
         w = (1 - w ** 3) ** 3
