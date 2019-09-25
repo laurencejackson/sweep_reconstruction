@@ -37,12 +37,13 @@ def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summa
                            width_ratios=[2, 1], height_ratios=[1, 1, 1], figure=fig)
 
     ax1 = plt.subplot(gs[0])
-    qq = get_expand_ylim(img_sum, 0.1, 0.9, edge_factor=0.15)
-    ax1.set_ylim(qq[0], qq[1])
-
     ax1.set_title('Raw body area')
     ax1.scatter(range(0, img_sum.shape[0]), img_sum, marker=".", c='r', s=1)
     ax1.plot(range(0, img_sum.shape[0]), y_mean, c='k')
+
+    qq1 = get_expand_ylim(img_sum, 0.05, 0.95, edge_factor=1.0)
+    ax1.set_ylim(qq1[0], qq1[1])
+
     ax2 = plt.subplot(gs[1])
     ax2.set_title('Raw body area zoom')
     ax2.set_yticklabels([])
@@ -60,8 +61,9 @@ def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summa
     ax1.add_patch(rect)
 
     ax3 = plt.subplot(gs[2])
-    qq = get_expand_ylim(resp, 0.1, 0.9, edge_factor=0.15)
-    ax3.set_ylim(qq[0], qq[1])
+    qq3 = get_expand_ylim(resp, 0.05, 0.95, edge_factor=1.0)
+    ax3.set_ylim(qq3[0], qq3[1])
+
     ax3.set_title('Filtered respiration')
     ax3.plot(range(0, resp.shape[0]), resp, c='k', linewidth=0.5, zorder=1)
     ax3.scatter(range(0, resp.shape[0]), resp, marker=".", c='r', s=1, zorder=2)
@@ -82,8 +84,8 @@ def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summa
     ax3.add_patch(rect)
 
     ax5 = plt.subplot(gs[4])
-    qq = get_expand_ylim(resp, 0.1, 0.9, edge_factor=0.15)
-    ax5.set_ylim(qq[0], qq[1])
+    qq5 = get_expand_ylim(resp, 0.05, 0.95, edge_factor=1.0)
+    ax5.set_ylim(qq5[0], qq5[1])
     ax5.set_title('Classification')
     ax5.plot(range(0, resp.shape[0]), resp, c='k', linewidth=0.5, zorder=5)
     ax5.scatter(range(0, resp.shape[0]), resp, c=sts, s=50, zorder=10)
@@ -102,7 +104,6 @@ def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summa
                              ((np.max(extracty) + 50) - (np.min(extracty) - 50)), linewidth=1, edgecolor='k',
                              facecolor='none', zorder=20)
     ax5.add_patch(rect)
-
     plt.tight_layout()
 
     plt.savefig('fig_respiration_summary', dpi=300)
@@ -112,12 +113,8 @@ def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summa
 def get_expand_ylim(data, qlo, qhi, edge_factor=0.15):
     """ get ylim for quartile range + edge_factor"""
 
-    yy_hi = (1 + edge_factor) * np.quantile(data, qhi)
-    yy_lo_q = np.quantile(data, qlo)
-
-    if yy_lo_q < 0:
-        yy_lo = (1 + edge_factor) * yy_lo_q
-    else:
-        yy_lo = (1 - edge_factor) * yy_lo_q
+    dev = np.std(data)
+    yy_hi = np.quantile(data, qhi) + (dev * edge_factor)
+    yy_lo = np.quantile(data, qlo) - (dev * edge_factor)
 
     return [yy_lo, yy_hi]
