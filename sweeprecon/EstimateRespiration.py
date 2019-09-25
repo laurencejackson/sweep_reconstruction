@@ -284,7 +284,8 @@ class EstimateRespiration(object):
             delta = np.clip(residuals / (6.0 * s), -1, 1)
             delta = (1 - delta ** 2) ** 2
 
-        return yest
+        self.resp_trend = yest
+        self.resp_trace = self.resp_raw - self.resp_trend
 
     # ___________________________________________________________________
     # __________________________ Static Methods__________________________
