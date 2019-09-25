@@ -250,7 +250,7 @@ class EstimateRespiration(object):
         self.resp_trend = medfilt(self.resp_raw, kernel_size=k)
         self.resp_trace = self.resp_raw - self.resp_trend
 
-    def _lowess_ag(self, f=0.2, iter=5):
+    def _lowess_ag(self, filt_time_s=10, iter=5):
         """lowess(x, y, f=2./3., iter=3) -> yest
         Lowess smoother: Robust locally weighted regression.
         The lowess function fits a nonparametric regression curve to a scatterplot.
@@ -261,10 +261,13 @@ class EstimateRespiration(object):
         smoother curve. The number of robustifying iterations is given by iter. The
         function will run faster with a smaller number of iterations.
         """
+
+        fs = self._image.get_fs()
+        r = ceil(filt_time_s / (1/fs))
         y = self.resp_raw
         x = np.arange(0, self.resp_raw.shape[0])
         n = len(x)
-        r = int(ceil(f * n))
+        # r = int(ceil(f * n))
         h = [np.sort(np.abs(x - x[i]))[r] for i in range(n)]
         w = np.clip(np.abs((x[:, None] - x[None, :]) / h), 0.0, 1.0)
         w = (1 - w ** 3) ** 3
