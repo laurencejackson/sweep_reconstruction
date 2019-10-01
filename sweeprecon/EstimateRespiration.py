@@ -18,6 +18,7 @@ from scipy.signal import medfilt2d, medfilt
 from skimage import restoration, measure, segmentation, exposure
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
+import statsmodels.api as sm
 
 
 class EstimateRespiration(object):
@@ -78,7 +79,7 @@ class EstimateRespiration(object):
         print('Extracting respiration...')
         self._sum_mask_data()
         # self._gpr_filter()
-        self._lowess_ag()
+        self._lowess_sm()
 
     def _auto_crop(self, resp_min=0.15, resp_max=0.4):
         """
@@ -250,6 +251,24 @@ class EstimateRespiration(object):
         self.resp_trend = medfilt(self.resp_raw, kernel_size=k)
         self.resp_trace = self.resp_raw - self.resp_trend
 
+    def _detrend_ica(self):
+        """Removes low frequency variation using a median filter"""
+        self.resp_trend = medfilt(self.resp_raw, kernel_size=19)
+        self.resp_trace = self.resp_raw - self.resp_trend
+
+    def _lowess_sm(self, filt_dist_mm=8, iter=5):
+
+        lowess = sm.nonparametric.lowess
+        kern = ceil(filt_dist_mm / self._image.nii.header["pixdim"][3])
+        kern_frac = kern / len(self.resp_raw)
+        y = self.resp_raw
+        x = np.arange(0, self.resp_raw.shape[0])
+
+        yest = lowess(y, x, frac=kern_frac, it=iter)
+
+        self.resp_trend = yest
+        self.resp_trace = self.resp_raw - self.resp_trend
+
     def _lowess_ag(self, filt_dist_mm=10, iter=5):
         """lowess(x, y, f=2./3., iter=3) -> yest
         Lowess smoother: Robust locally weighted regression.
@@ -361,7 +380,7 @@ class EstimateRespiration(object):
                                                                   iterations,
                                                                   init_level_set=init_level_set,
                                                                   smoothing=8,
-                                                                  balloon=1.2
+                                                                  balloon=1.4
                                                                   )
 
     @staticmethod
