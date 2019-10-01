@@ -266,7 +266,7 @@ class EstimateRespiration(object):
 
         yest = lowess(y, x, frac=kern_frac, it=iter)
 
-        self.resp_trend = yest
+        self.resp_trend = yest[:, 1]
         self.resp_trace = self.resp_raw - self.resp_trend
 
     def _lowess_ag(self, filt_dist_mm=10, iter=5):
@@ -369,7 +369,7 @@ class EstimateRespiration(object):
                                                     )
 
     @staticmethod
-    def _segment_gac(img, init_level_set, iterations=300):
+    def _segment_gac(img, init_level_set, iterations=200):
         """
         refines initial segmentation contours using geodesic active contours
         :param imgs: list of 2 images [2D] imgs[0] = slice to segment: imgs[1] = initial level set
