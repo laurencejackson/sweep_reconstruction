@@ -41,7 +41,7 @@ def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summa
     ax1.scatter(range(0, img_sum.shape[0]), img_sum, marker=".", c='r', s=1)
     ax1.plot(range(0, img_sum.shape[0]), y_mean, c='k')
 
-    qq1 = get_expand_ylim(img_sum, 0.05, 0.95, edge_factor=1.0)
+    qq1 = get_expand_ylim(img_sum, 0.1, 0.9, edge_factor=1.0)
     ax1.set_ylim(qq1[0], qq1[1])
 
     ax2 = plt.subplot(gs[1])
@@ -61,7 +61,7 @@ def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summa
     ax1.add_patch(rect)
 
     ax3 = plt.subplot(gs[2])
-    qq3 = get_expand_ylim(resp, 0.05, 0.95, edge_factor=1.0)
+    qq3 = get_expand_ylim(resp, 0.1, 0.9, edge_factor=1.0)
     ax3.set_ylim(qq3[0], qq3[1])
 
     ax3.set_title('Filtered respiration')
@@ -84,7 +84,7 @@ def plot_respiration_summary(img_sum, y_mean, resp, sts, name='respiration_summa
     ax3.add_patch(rect)
 
     ax5 = plt.subplot(gs[4])
-    qq5 = get_expand_ylim(resp, 0.05, 0.95, edge_factor=1.0)
+    qq5 = get_expand_ylim(resp, 0.1, 0.9, edge_factor=1.0)
     ax5.set_ylim(qq5[0], qq5[1])
     ax5.set_title('Classification')
     ax5.plot(range(0, resp.shape[0]), resp, c='k', linewidth=0.5, zorder=5)

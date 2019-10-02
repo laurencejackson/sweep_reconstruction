@@ -369,7 +369,7 @@ class EstimateRespiration(object):
                                                     )
 
     @staticmethod
-    def _segment_gac(img, init_level_set, iterations=200):
+    def _segment_gac(img, init_level_set, iterations=300):
         """
         refines initial segmentation contours using geodesic active contours
         :param imgs: list of 2 images [2D] imgs[0] = slice to segment: imgs[1] = initial level set
@@ -380,7 +380,7 @@ class EstimateRespiration(object):
                                                                   iterations,
                                                                   init_level_set=init_level_set,
                                                                   smoothing=8,
-                                                                  balloon=1.4
+                                                                  balloon=1.0
                                                                   )
 
     @staticmethod
