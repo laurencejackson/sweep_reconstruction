@@ -70,7 +70,7 @@ def main():
     app_resample_data(pipeline=True)
 
     # ______________________ Reconstruct image data ______________________
-    app_reconstruct_data(pipeline=True)
+    # app_reconstruct_data(pipeline=True)
 
     return
 
