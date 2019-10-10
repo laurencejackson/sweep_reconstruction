@@ -352,7 +352,7 @@ class EstimateRespiration(object):
         return exposure.equalize_adapthist(img.astype('uint16'), clip_limit=clip_limit)
 
     @staticmethod
-    def _segment_cv(img, init_level_set, iterations=200):
+    def _segment_cv(img, init_level_set, iterations=300):
         """
         refines initial segmentation contours using chan vese segmentation model
         :param img: slice to segment:
