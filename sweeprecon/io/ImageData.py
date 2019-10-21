@@ -70,7 +70,7 @@ class ImageData(object):
         print('Saving ' + path)
         nii = nib.Nifti1Image(self.img, self.nii.affine, self.nii.header)
         nib.save(nii, path)
-        self._imagefilepath = path
+        self.imagefilepath = path
 
     def get_fs(self):
         """Estimates the sampling frequency in Hz from the NIfTI header"""
