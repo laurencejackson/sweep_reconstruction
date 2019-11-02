@@ -198,7 +198,7 @@ class ResampleData(object):
                 sub_arrays = pool.starmap_async(self._rbf_interp_line,
                                              [(self._get_training_y(xx, yy, ww, kernel_dim=self._kernel_dims),
                                              self._get_training_x(xx, yy, ww, kernel_dim=self._kernel_dims),
-                                             self._get_zq(xx, yy, kernel_dim=self._kernel_dims))
+                                             self._get_zq(xx, yy, self._zq, self._image.nii.header['pixdim'], kernel_dim=self._kernel_dims))
                                               for xx in np.nditer(self._xi) for yy in np.nditer(self._yi)]).get()
 
                 print('%s duration: %.1fs' % ('_interp_rbf', (time.time() - tt)))
@@ -215,7 +215,7 @@ class ResampleData(object):
                     for yy in np.nditer(self._yi):
                         training_x = self._get_training_x(xx, yy, ww, kernel_dim=self._kernel_dims)
                         training_y = self._get_training_y(xx, yy, ww, kernel_dim=self._kernel_dims)
-                        zq = self._get_zq(xx, yy, kernel_dim=self._kernel_dims)
+                        zq = self._get_zq(xx, yy, self._zq, self._image.nii.header['pixdim'], kernel_dim=self._kernel_dims)
                         self._img_4d[xx, yy, :, ww - 1] = self._rbf_interp_line(training_y, training_x, zq, singlethread=True).flatten()
 
             # save single resp state volumes
@@ -279,17 +279,6 @@ class ResampleData(object):
 
         return training_x
 
-    def _get_zq(self, x, y, kernel_dim):
-        """returns the relative query points"""
-        if kernel_dim > 1:
-            X, Y, Z = np.meshgrid(x, y, self._zq)
-            zq = np.vstack([X.ravel() * self._image.nii.header['pixdim'][1],
-                            Y.ravel() * self._image.nii.header['pixdim'][2],
-                            Z.ravel()]).transpose()
-        else:
-            zq = self._zq.reshape(-1, 1)
-        return zq
-
     def _get_pixels_xy(self, x, y, slice_idx, kernel_dim=1):
         """Gets valid xy pixel indices"""
 
@@ -310,7 +299,7 @@ class ResampleData(object):
 
         return np.vstack([X.ravel(), Y.ravel(), Z.ravel()])
 
-    @ staticmethod
+    @staticmethod
     def _rbf_interp_line(y, X, zq, singlethread=False):
         """Simple function to fit RBF model to one line of z data"""
         t1 = time.time()
@@ -323,3 +312,15 @@ class ResampleData(object):
             sys.stdout.write('\r' + 'CPU time per line = {:.3f}'.format(time.time() - t1))
 
         return z_pred
+
+    @staticmethod
+    def _get_zq(x, y, zq, pixdim, kernel_dim):
+        """returns the relative query points"""
+        if kernel_dim > 1:
+            X, Y, Z = np.meshgrid(x, y, zq)
+            zq = np.vstack([X.ravel() * pixdim[1],
+                            Y.ravel() * pixdim[2],
+                            Z.ravel()]).transpose()
+        else:
+            zq = zq(-1, 1)
+        return zq
