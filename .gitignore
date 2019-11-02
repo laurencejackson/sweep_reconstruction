@@ -62,7 +62,7 @@ target/
 idea/
 test_dump/
 optimisation/data/
-optimisation/*.nii.gz
+optimisation/
 
 # ipynb ignores
 .ipynb_checkpoints

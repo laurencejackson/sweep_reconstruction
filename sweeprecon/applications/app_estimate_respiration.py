@@ -8,6 +8,7 @@ Laurence Jackson, BME, KCL, 2019
 import numpy as np
 
 from sweeprecon.EstimateRespiration import EstimateRespiration
+from sweeprecon.CorePeripheryTarget import CorePeripheryTarget
 from sweeprecon.ClassifyRespiration import ClassifyRespiration
 from sweeprecon.io.ArgParser import ArgParser
 from sweeprecon.io.ImageData import ImageData
@@ -42,6 +43,7 @@ def app_estimate_respiration(pipeline=False):
         input_vars.add_n_threads(required=False)
         input_vars.add_crop_fraction(required=False)
         input_vars.add_ba_method(required=False)
+        input_vars.add_resp_method(required=False)
         input_vars.add_flag_no_auto_crop(required=False)
         
         # parse
@@ -60,33 +62,41 @@ def app_estimate_respiration(pipeline=False):
         write_paths = WritePaths(args)
         image = ImageData(write_paths.path_sorted())
 
-    # Estimate respiration
-    resp = EstimateRespiration(image,
-                               write_paths,
-                               args,
-                               method='body_area',  # currently only body_area but space for other methods,
-                               disable_crop_data=args.disable_crop,
-                               n_threads=args.n_threads,
-                               )
-    resp.run()
+    if args.resp_method == 'ba':
+        # Estimate respiration
+        resp = EstimateRespiration(image,
+                                   write_paths,
+                                   args,
+                                   method='body_area',  # currently only body_area but space for other methods,
+                                   disable_crop_data=args.disable_crop,
+                                   n_threads=args.n_threads,
+                                   )
+        resp.run()
 
-    # classify resp states
-    classifier = ClassifyRespiration(resp.resp_trace)
-    classifier.classify_states(args.nstates)
+        # classify resp states
+        classifier = ClassifyRespiration(resp.resp_trace)
+        classifier.classify_states(args.nstates)
 
-    # Plot and save summary of respiration
-    plot_respiration_summary(resp.resp_raw, resp.resp_trend, resp.resp_trace, classifier.index)
+        # Plot and save summary of respiration
+        plot_respiration_summary(resp.resp_raw, resp.resp_trend, resp.resp_trace, classifier.index)
 
-    # record output
-    logger.set_key('resp_raw', resp.resp_raw)
-    logger.set_key('resp_trend', resp.resp_trend)
-    logger.set_key('resp_trace', resp.resp_trace)
-    logger.set_key('resp_states', classifier.index)
+        # record output
+        logger.set_key('resp_raw', resp.resp_raw)
+        logger.set_key('resp_trend', resp.resp_trend)
+        logger.set_key('resp_trace', resp.resp_trace)
+        logger.set_key('resp_states', classifier.index)
 
-    # save excludes list
-    for ww in range(1, args.nstates+1):
-        slice_idx = np.where((logger.log.resp_states != ww) & (logger.log.resp_states != 0))
-        np.savetxt(write_paths.path_exclude_file(ww), slice_idx, fmt='%d', newline=' ')
+        # save excludes list
+        for ww in range(1, args.nstates+1):
+            slice_idx = np.where((logger.log.resp_states != ww) & (logger.log.resp_states != 0))
+            np.savetxt(write_paths.path_exclude_file(ww), slice_idx, fmt='%d', newline=' ')
+
+    elif args.resp_method == 'graph':
+        grp = CorePeripheryTarget(image, np.array([86, 86, 128]), args, write_paths)
+        grp.run()
+
+    else:
+        print('invalid resp method')
 
     # log complete
     logger.set_key('flag_estimated_respiration', True)

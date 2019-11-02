@@ -5,7 +5,7 @@ Laurence Jackson, BME, KCL, 2019
 """
 
 import matplotlib
-matplotlib.use('Agg')  # use agg backend to prevent figure plotting - no need for x11 permissions when running remotely
+# matplotlib.use('Agg')  # use agg backend to prevent figure plotting - no need for x11 permissions when running remotely
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.gridspec as gridspec

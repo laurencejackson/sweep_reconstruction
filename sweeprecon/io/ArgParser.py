@@ -102,6 +102,16 @@ class ArgParser(object):
                       ):
         self._add_argument(dict(locals()))
 
+    def add_resp_method(self,
+                      option_string=("-rs", "--resp_method"),
+                      metavar='',
+                      help="method for respiration correction (ba or graph)",
+                      required=False,
+                      default='graph',
+                      type=str
+                      ):
+        self._add_argument(dict(locals()))
+
     def add_n_resp_states(self,
                           option_string=("-n", "--nstates"),
                           metavar='',

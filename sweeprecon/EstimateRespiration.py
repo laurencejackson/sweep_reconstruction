@@ -81,6 +81,23 @@ class EstimateRespiration(object):
         # self._gpr_filter()
         self._lowess_sm()
 
+    def _method_core_periphery(self):
+        """Correct respiraiton using core/periphery networks"""
+
+        print('Filtering image....')
+        filtered_image = self._process_slices_parallel(self._filter_gaussian,
+                                                       self._image.img,
+                                                       cores=self._n_threads)
+
+        print('Determining local similarity measure')
+        self._local_sim(filtered_image)
+
+    def _local_sim(self, filtered_image, nsx=8, nsy=8):
+        """ Find local similarity measure"""
+
+        px = np.linspace(self._local_patch_size[0]/2, self._image.img.shape[0] - self._local_patch_size[0]/2, nsx)
+        py = np.linspace(self._local_patch_size[1] / 2, self._image.img.shape[1] - self._local_patch_size[1] / 2, nsy)
+
     def _auto_crop(self, resp_min=0.15, resp_max=0.4):
         """
         Finds the best region to crop the image based on the respiratory content of the image
@@ -321,6 +338,16 @@ class EstimateRespiration(object):
         :return:
         """
         return medfilt2d(img, [kernel_size, kernel_size])  # median filter more robust to bands in balanced images
+
+    @ staticmethod
+    def _filter_gaussian(img, sigma=0.75):
+        """
+        Median filter
+        :param imgs: slice to filter [2D]
+        :param kernel_size: size of median kernel
+        :return:
+        """
+        return gaussian_filter(img, sigma)  # gaussian filter
 
     @staticmethod
     def _filter_denoise(img, weight=0.003):
