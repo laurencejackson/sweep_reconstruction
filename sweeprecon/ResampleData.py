@@ -49,8 +49,9 @@ class ResampleData(object):
         self._image_resp_3d = copy.deepcopy(image)
         self._states = states
         if isinstance(self._states, tuple):
+            print('Switching to graph method')
             self._graph_resample = True
-            self._locs = states[0]
+            self._locs = states[0].astype(bool)
             self._pxpy = states[1]
             self._nstates = 1
         else:
