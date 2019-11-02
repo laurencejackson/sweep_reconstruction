@@ -36,7 +36,7 @@ class ResampleData(object):
         """
         initilises ResampleData
         :param image: ImageData object containing input image
-        :param states: vector mapping each slice of image to a respiration state
+        :param states: vector mapping each slice of image to a respiration state OR matrix with graph locations
         :param slice_locations: vector mapping each slice to a spatial position relative to origin
         :param write_paths: WritePaths object containing paths to write output
         :param interp_method: method for interpolation, 'fast_linear' or 'rbf' (slower but smoother)
@@ -47,11 +47,16 @@ class ResampleData(object):
         self._image_4d = copy.deepcopy(image)
         self._image_resp_3d = copy.deepcopy(image)
         self._states = states
+        if self._states.ndim > 1:
+            self._graph_resample = True
+            self._nstates = 1
+        else:
+            self._nstates = np.max(states)
+
         self._slice_locations = slice_locations
         self._write_paths = write_paths
         self._args = args
         self._resolution = resolution
-        self._nstates = np.max(states)
         self._kernel_dims = kernel_dims
         self._n_threads = n_threads
 
@@ -79,6 +84,7 @@ class ResampleData(object):
     def _init_vols(self):
         """pre-allocates memory for interpolated volumes"""
         print('Pre-allocating 4D volume')
+        if
         self._img_4d = np.zeros(np.array([self._image.img.shape[0],
                                 self._image.img.shape[1],
                                 (self._image.nii.header['pixdim'][3] * self._image.nii.header['dim'][3]) / self._dxyz[2],
@@ -127,11 +133,10 @@ class ResampleData(object):
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d' % ww)
 
-            slice_idx = np.where(self._states == ww)
-            zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
-
             for xx in np.nditer(self._xi):
                 for yy in np.nditer(self._yi):
+                    slice_idx = np.where(self._states == ww)
+                    zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
                     z_interp = np.interp(self._zq, zs, self._image.img[xx, yy, slice_idx].flatten())
                     self._img_4d[xx, yy, :, ww - 1] = z_interp.flatten()
 

@@ -3,13 +3,17 @@ Class containing data and functions for estimating respiration siganl from 3D da
 
 Laurence Jackson, BME, KCL 2019
 """
-
+import os
+import sys
 import time
 import numpy as np
 import copy
+import itertools
 
 from multiprocessing import Pool, cpu_count
 from scipy.ndimage import gaussian_filter
+from bct import core_periphery_dir
+
 import matplotlib.pyplot as plt
 
 
@@ -23,10 +27,11 @@ class CorePeripheryTarget(object):
         self._local_patch_size = local_patch_size
         self._args = args
         self._write_paths = write_paths
-        self._nsx = 8
-        self._nsy = 8
+        self._nsx = 2
+        self._nsy = 2
         self._adj = np.zeros((self._nsx, self._nsy, self._image.img.shape[2], self._image.img.shape[2]))
         self._sim = np.zeros(local_patch_size[2])
+        self.locs = np.zeros((self._nsx, self._nsy,self._image.img.shape[2]))
 
     def run(self):
 
@@ -45,21 +50,23 @@ class CorePeripheryTarget(object):
 
     def _generate_adjacency_matrix(self):
         """ Find local similarity measure"""
-        px = np.linspace(self._local_patch_size[0] / 2, self._image.img.shape[0] - self._local_patch_size[0] / 2, self._nsx).astype(int)
-        py = np.linspace(self._local_patch_size[1] / 2, self._image.img.shape[1] - self._local_patch_size[1] / 2, self._nsy).astype(int)
+        self.px = np.linspace(self._local_patch_size[0] / 2, self._image.img.shape[0] - self._local_patch_size[0] / 2, self._nsx).astype(int)
+        self.py = np.linspace(self._local_patch_size[1] / 2, self._image.img.shape[1] - self._local_patch_size[1] / 2, self._nsy).astype(int)
 
-        for nx, xx in enumerate(px):
-            for ny, yy in enumerate(py):
-                print((xx, yy))
+        for nx, xx in enumerate(self.px):
+            for ny, yy in enumerate(self.py):
+                print(' Analysing patch (%d,%d)' % (xx, yy), end=' ')
+                self._img_local = copy.deepcopy(self._filtered_image)
                 self._extract_local_patch(xx, yy)
                 self._adj[nx, ny, :, :] = self._local_sim(xx, yy)
-                self._locs[nx, nx, :] = self._core_periphery()
+                self.locs[nx, nx, :] = self._core_periphery(np.squeeze(self._adj[nx, ny, :, :]))
 
     def _extract_local_patch(self, xx, yy):
-        x1 = np.int_(xx - self._local_patch_size[0] / 2)
-        x2 = np.int_(xx + self._local_patch_size[0] / 2)
-        y1 = np.int_(yy - self._local_patch_size[1] / 2)
-        y2 = np.int_(yy + self._local_patch_size[1] / 2)
+        print('->Extracting local patch', end=' ')
+        x1 = np.int_(xx - self._local_patch_size[0]/2)
+        x2 = np.int_(xx + self._local_patch_size[0]/2)-1
+        y1 = np.int_(yy - self._local_patch_size[1]/2)
+        y2 = np.int_(yy + self._local_patch_size[1]/2)-1
 
         local_rect = np.array([[x1, y1],
                                [x2, y2]], dtype=int)
@@ -67,6 +74,7 @@ class CorePeripheryTarget(object):
         self._img_local.square_crop(local_rect)
 
     def _local_sim(self, xx, yy):
+        print('->Calculating local similarity', end=' ')
         # loop over target slices
         sim_mat = np.zeros((self._image.img.shape[2], self._image.img.shape[2]))
         for tt in range(0, self._img_local.img.shape[2] - 1):
@@ -87,9 +95,46 @@ class CorePeripheryTarget(object):
 
         return sim_mat
 
-    def _core_periphery(self):
+    def _core_periphery(self, C, WindowSize=16):
         """sliding window core/periphery graph"""
-        pass
+        print('->Assigning core/periphery ')
+        self.blockPrint()
+        gamma_inc = 0.01
+        gamma_max = 2.0
+        vecCore = np.zeros(C.shape[0])
+        controlMethod = 'maxSeparation'
+        coreMask = np.zeros((WindowSize, C.shape[0]))
+
+        for n in range(0, C.shape[1]-WindowSize):
+            gamma = 1
+            Caux = C[n:n + WindowSize, n: n + WindowSize]
+            if controlMethod == 'maxSeparation':
+                max_separation = 0.5 * WindowSize
+                longest_sep = 0
+                while longest_sep < max_separation:
+                    coreMask[:, n] = core_periphery_dir(Caux, gamma)[0]
+                    longest_sep = max(len(list(y)) for (c,y) in itertools.groupby(coreMask[:, n]) if c==0)
+                    gamma = gamma + gamma_inc
+                    if longest_sep > max_separation:
+                        coreMask[:, n] = core_periphery_dir(Caux, gamma - (2 * gamma_inc))[0]
+                        gamma = gamma - (2 * gamma_inc)
+                    if gamma > gamma_max:
+                        break
+
+            self.enablePrint()
+            vecCore[np.argwhere(coreMask[:, n] > 0) + n] = vecCore[np.argwhere(coreMask[:, n] > 0)+n] + 1
+
+        locs = vecCore > 2
+        self.enablePrint()
+        return locs
+
+    @staticmethod
+    def blockPrint():
+        sys.stdout = open(os.devnull, 'w')
+
+    @staticmethod
+    def enablePrint():
+        sys.stdout = sys.__stdout__
 
     @staticmethod
     def _zncc(img1, img2):
@@ -106,7 +151,7 @@ class CorePeripheryTarget(object):
         :param kernel_size: size of median kernel
         :return:
         """
-        return gaussian_filter(img, sigma)  # gaussian filter
+        return gaussian_filter(img, sigma=sigma)  # gaussian filter
 
     @staticmethod
     def _process_slices_parallel(function_name, *vols, cores=0):
