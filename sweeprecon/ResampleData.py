@@ -20,6 +20,7 @@ import numpy as np
 from scipy import interpolate
 from skimage.filters import frangi
 from skimage.transform import resize
+from joblib import delayed, Parallel
 
 
 class ResampleData(object):
@@ -183,9 +184,9 @@ class ResampleData(object):
         else:
             cores = self._n_threads
 
-        if cores > 1:
-            print('Starting pool [%d processes]' % cores)
-            pool = mp.Pool(cores)
+        #if cores > 1:
+        #    print('Starting pool [%d processes]' % cores)
+        #    pool = mp.Pool(cores)
 
         t1 = time.time()
 
@@ -196,11 +197,17 @@ class ResampleData(object):
                 #slice_idx = np.where(self._states == ww)
                 #self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
-                sub_arrays = pool.starmap_async(self._rbf_interp_line,
-                                             [(self._get_training_y(xx, yy, ww, kernel_dim=self._kernel_dims),
-                                             self._get_training_x(xx, yy, ww, kernel_dim=self._kernel_dims),
-                                             self._get_zq(xx, yy, self._zq, self._image.nii.header['pixdim'], kernel_dim=self._kernel_dims))
-                                              for xx in np.nditer(self._xi) for yy in np.nditer(self._yi)]).get()
+                # sub_arrays = pool.starmap_async(self._rbf_interp_line,
+                #                              [(self._get_training_y(xx, yy, ww, kernel_dim=self._kernel_dims),
+                #                              self._get_training_x(xx, yy, ww, kernel_dim=self._kernel_dims),
+                #                              self._get_zq(xx, yy, self._zq, self._image.nii.header['pixdim'], kernel_dim=self._kernel_dims))
+                #                               for xx in np.nditer(self._xi) for yy in np.nditer(self._yi)]).get()
+
+                sub_arrays = Parallel(n_jobs=cores)(delayed(self._rbf_interp_line)(self._get_training_y(xx, yy, ww, kernel_dim=self._kernel_dims),
+                                                self._get_training_x(xx, yy, ww, kernel_dim=self._kernel_dims),
+                                                self._get_zq(xx, yy, self._zq, self._image.nii.header['pixdim'],
+                                                             kernel_dim=self._kernel_dims))
+                                               for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))
 
                 print('%s duration: %.1fs' % ('_interp_rbf', (time.time() - tt)))
 
