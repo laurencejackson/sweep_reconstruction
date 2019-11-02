@@ -50,7 +50,7 @@ class ResampleData(object):
         self._states = states
         if self._states.ndim > 1:
             self._graph_resample = True
-            self._locs = states
+            self._locs = states.astype(bool)
             #self._pxpy = states[1]
             self._expand_graph_locs()
             self._nstates = 1
@@ -84,7 +84,7 @@ class ResampleData(object):
     def _expand_graph_locs(self):
         """interpolate graph_locs up to full size"""
         print('not ideal - simple resize of locs should switch to interpolated volume to reduce chance of errors')
-        self._locs = resize(self._locs, self._image.img.shape, order=0)
+        self._locs = resize(self._locs, self._image.img.shape, order=0).astype(bool)
 
     def _write_resampled_data(self, image_obj, path):
         """Saves re-sampled image"""
@@ -147,7 +147,7 @@ class ResampleData(object):
                 for yy in np.nditer(self._yi):
 
                     if self._graph_resample:
-                        slice_idx = np.squeeze(self._locs[xx, yy, :].astype(bool))
+                        slice_idx = np.squeeze(self._locs[xx, yy, :])
                     else:
                         slice_idx = np.where(self._states == ww)
 
@@ -182,33 +182,41 @@ class ResampleData(object):
             cores = max(1, mp.cpu_count() - 1)
         else:
             cores = self._n_threads
-
-        print('Starting pool [%d processes]' % cores)
-        pool = mp.Pool(cores)
+        if self._n_threads > 1:
+            print('Starting pool [%d processes]' % cores)
+            pool = mp.Pool(cores)
 
         t1 = time.time()
 
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d' % ww)
-            tt = time.time()
-            #slice_idx = np.where(self._states == ww)
-            #self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
+            if self._n_threads > 1:
+                tt = time.time()
+                #slice_idx = np.where(self._states == ww)
+                #self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
-            sub_arrays = pool.starmap_async(self._rbf_interp_line,
-                                         [(self._get_training_y(xx, yy, ww, kernel_dim=self._kernel_dims),
-                                         self._get_training_x(xx, yy, ww, kernel_dim=self._kernel_dims),
-                                         self._get_zq(xx, yy, kernel_dim=self._kernel_dims))
-                                          for xx in np.nditer(self._xi) for yy in np.nditer(self._yi)]).get()
+                sub_arrays = pool.starmap_async(self._rbf_interp_line,
+                                             [(self._get_training_y(xx, yy, ww, kernel_dim=self._kernel_dims),
+                                             self._get_training_x(xx, yy, ww, kernel_dim=self._kernel_dims),
+                                             self._get_zq(xx, yy, kernel_dim=self._kernel_dims))
+                                              for xx in np.nditer(self._xi) for yy in np.nditer(self._yi)]).get()
 
-            print('%s duration: %.1fs' % ('_interp_rbf', (time.time() - tt)))
+                print('%s duration: %.1fs' % ('_interp_rbf', (time.time() - tt)))
 
-            # insert interpolated data into pre-allocated volume
-            print('\ncollecting data')
-            index = 0
-            for xx in np.nditer(self._xi):
-                for yy in np.nditer(self._yi):
-                    self._img_4d[xx, yy, :, ww - 1] = sub_arrays[index].flatten()
-                    index = index + 1
+                # insert interpolated data into pre-allocated volume
+                print('\ncollecting data')
+                index = 0
+                for xx in np.nditer(self._xi):
+                    for yy in np.nditer(self._yi):
+                        self._img_4d[xx, yy, :, ww - 1] = sub_arrays[index].flatten()
+                        index = index + 1
+            else:
+                for xx in np.nditer(self._xi):
+                    for yy in np.nditer(self._yi):
+                        training_x = self._get_training_x(xx, yy, ww, kernel_dim=self._kernel_dims)
+                        training_y = self._get_training_y(xx, yy, ww, kernel_dim=self._kernel_dims)
+                        zq = self._get_zq(xx, yy, kernel_dim=self._kernel_dims)
+                        self._img_4d[xx, yy, :, ww - 1] = self._rbf_interp_line(training_y, training_x, zq, singlethread=True).flatten()
 
             # save single resp state volumes
             self._image_resp_3d.set_data(self._img_4d[:, :, :, ww - 1])
@@ -216,8 +224,9 @@ class ResampleData(object):
 
             print('---')
 
-        pool.close()
-        pool.join()
+        if self._n_threads > 1:
+            pool.close()
+            pool.join()
 
         # reset python environ to normalise threading
         os.environ.clear()
@@ -302,12 +311,15 @@ class ResampleData(object):
         return np.vstack([X.ravel(), Y.ravel(), Z.ravel()])
 
     @ staticmethod
-    def _rbf_interp_line(y, X, zq):
+    def _rbf_interp_line(y, X, zq, singlethread=False):
         """Simple function to fit RBF model to one line of z data"""
         t1 = time.time()
         rbfi = interpolate.Rbf(X[:, 0], X[:, 1], X[:, 2], y[:, ], function='multiquadric', epsilon=0.6, smooth=4)
         z_pred = rbfi(zq[:, 0], zq[:, 1], zq[:, 2])
 
-        sys.stdout.write('\r' + 'CPU time per line = {:.3f}'.format(time.time() - t1))
+        if singlethread:
+            sys.stdout.write('\r' + 'CPU (single thread) )time per line = {:.3f}'.format(time.time() - t1))
+        else:
+            sys.stdout.write('\r' + 'CPU time per line = {:.3f}'.format(time.time() - t1))
 
         return z_pred
