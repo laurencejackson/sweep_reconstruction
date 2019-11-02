@@ -48,11 +48,10 @@ class ResampleData(object):
         self._image_4d = copy.deepcopy(image)
         self._image_resp_3d = copy.deepcopy(image)
         self._states = states
-        if self._states.ndim > 1:
+        if isinstance(self._states, tuple):
             self._graph_resample = True
-            self._locs = states.astype(bool)
-            #self._pxpy = states[1]
-            self._expand_graph_locs()
+            self._locs = states[0]
+            self._pxpy = states[1]
             self._nstates = 1
         else:
             self._nstates = np.max(states)
@@ -84,7 +83,7 @@ class ResampleData(object):
     def _expand_graph_locs(self):
         """interpolate graph_locs up to full size"""
         print('not ideal - simple resize of locs should switch to interpolated volume to reduce chance of errors')
-        self._locs = resize(self._locs, self._image.img.shape, order=0).astype(bool)
+        #self._locs = resize(self._locs, self._image.img.shape, order=0).astype(bool)
 
     def _write_resampled_data(self, image_obj, path):
         """Saves re-sampled image"""
@@ -147,7 +146,7 @@ class ResampleData(object):
                 for yy in np.nditer(self._yi):
 
                     if self._graph_resample:
-                        slice_idx = np.squeeze(self._locs[xx, yy, :])
+                        slice_idx = self._find_nearest_locs(self._locs, self._pxpy, xx, yy)
                     else:
                         slice_idx = np.where(self._states == ww)
 
@@ -248,7 +247,7 @@ class ResampleData(object):
     def _get_training_y(self, x, y, ww, kernel_dim=1):
         """Gets array of training point values"""
         if self._graph_resample:
-            slice_idx = np.argwhere(self._locs[x, y, :])
+            slice_idx = self._find_nearest_locs(self._locs, self._pxpy, x, y)
         else:
             slice_idx = np.where(self._states == ww)
 
@@ -263,7 +262,7 @@ class ResampleData(object):
     def _get_training_x(self, x, y, ww, kernel_dim=1):
         """Gets array of training point co-ordinates"""
         if self._graph_resample:
-            slice_idx = np.argwhere(self._locs[x, y, :])
+            slice_idx = self._find_nearest_locs(self._locs, self._pxpy, x, y)
         else:
             slice_idx = np.where(self._states == ww)
 
@@ -324,3 +323,14 @@ class ResampleData(object):
         else:
             zq = zq(-1, 1)
         return zq
+
+    @staticmethod
+    def _find_nearest_locs(locs, pxpy, xx, yy):
+
+        xi, yi = np.meshgrid(pxpy[:, 0], pxpy[:, 1])
+        nodes = np.concatenate((xi.ravel()[:, np.newaxis], yi.ravel()[:, np.newaxis]), axis=1)
+        dist_2 = np.sum((nodes - [xx, yy]) ** 2, axis=1)
+        px = np.argwhere(pxpy[:, 0] == nodes[np.argmin(dist_2)][0])
+        py = np.argwhere(pxpy[:, 1] == nodes[np.argmin(dist_2)][1])
+
+        return np.squeeze(locs[px, py, :]).astype(bool)

@@ -64,10 +64,11 @@ def app_resample_data(pipeline=False):
         # set up re-sampler
         if args.locs_matlab is not None:
             logger.log.graph_locs = sio.loadmat(args.locs_matlab)['locs']
+            logger.log.px_py = sio.loadmat(args.locs_matlab)['pxpy']
 
         resampler = ResampleData(image,
-                                 #(logger.log.graph_locs, logger.log.px_py), # how to do it in future
-                                 logger.log.graph_locs,
+                                 (logger.log.graph_locs, logger.log.px_py), # how to do it in future
+                                 #logger.log.graph_locs,
                                  logger.log.geo_slice_locations,
                                  write_paths,
                                  args,
