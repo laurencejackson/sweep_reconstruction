@@ -182,7 +182,8 @@ class ResampleData(object):
             cores = max(1, mp.cpu_count() - 1)
         else:
             cores = self._n_threads
-        if self._n_threads > 1:
+
+        if cores > 1:
             print('Starting pool [%d processes]' % cores)
             pool = mp.Pool(cores)
 
@@ -190,7 +191,7 @@ class ResampleData(object):
 
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d' % ww)
-            if self._n_threads > 1:
+            if cores > 1:
                 tt = time.time()
                 #slice_idx = np.where(self._states == ww)
                 #self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
@@ -224,7 +225,7 @@ class ResampleData(object):
 
             print('---')
 
-        if self._n_threads > 1:
+        if cores > 1:
             pool.close()
             pool.join()
 
