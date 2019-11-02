@@ -27,8 +27,8 @@ class CorePeripheryTarget(object):
         self._local_patch_size = local_patch_size
         self._args = args
         self._write_paths = write_paths
-        self._nsx = 2
-        self._nsy = 2
+        self._nsx = 3
+        self._nsy = 3
         self._adj = np.zeros((self._nsx, self._nsy, self._image.img.shape[2], self._image.img.shape[2]))
         self._sim = np.zeros(local_patch_size[2])
         self.locs = np.zeros((self._nsx, self._nsy,self._image.img.shape[2]))
@@ -50,8 +50,13 @@ class CorePeripheryTarget(object):
 
     def _generate_adjacency_matrix(self):
         """ Find local similarity measure"""
-        self.px = np.linspace(self._local_patch_size[0] / 2, self._image.img.shape[0] - self._local_patch_size[0] / 2, self._nsx).astype(int)
-        self.py = np.linspace(self._local_patch_size[1] / 2, self._image.img.shape[1] - self._local_patch_size[1] / 2, self._nsy).astype(int)
+        x1 = max(self._local_patch_size[0]/2, (self._image.img.shape[0] / (self._nsx + 1)))
+        x2 = min(self._image.img.shape[0] - self._local_patch_size[0]/2, (self._image.img.shape[0] - (self._image.img.shape[0] / (self._nsx+1))))
+        y1 = max(self._local_patch_size[1]/2, (self._image.img.shape[1] / (self._nsy + 1)))
+        y2 = min(self._image.img.shape[1] - self._local_patch_size[1]/2,(self._image.img.shape[1] - (self._image.img.shape[1] / (self._nsy + 1))))
+
+        self.px = np.linspace(x1, x2, self._nsx).astype(int)
+        self.py = np.linspace(y1, y2, self._nsy).astype(int)
 
         for nx, xx in enumerate(self.px):
             for ny, yy in enumerate(self.py):
@@ -59,7 +64,7 @@ class CorePeripheryTarget(object):
                 self._img_local = copy.deepcopy(self._filtered_image)
                 self._extract_local_patch(xx, yy)
                 self._adj[nx, ny, :, :] = self._local_sim(xx, yy)
-                self.locs[nx, nx, :] = self._core_periphery(np.squeeze(self._adj[nx, ny, :, :]))
+                self.locs[nx, ny, :] = self._core_periphery(np.squeeze(self._adj[nx, ny, :, :])).astype(int)
 
     def _extract_local_patch(self, xx, yy):
         print('->Extracting local patch', end=' ')
@@ -121,7 +126,6 @@ class CorePeripheryTarget(object):
                     if gamma > gamma_max:
                         break
 
-            self.enablePrint()
             vecCore[np.argwhere(coreMask[:, n] > 0) + n] = vecCore[np.argwhere(coreMask[:, n] > 0)+n] + 1
 
         locs = vecCore > 2

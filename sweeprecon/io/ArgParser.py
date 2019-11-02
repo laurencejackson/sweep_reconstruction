@@ -112,6 +112,16 @@ class ArgParser(object):
                       ):
         self._add_argument(dict(locals()))
 
+    def add_read_locs_matlab(self,
+                      option_string=("-rlm", "--locs_matlab"),
+                      metavar='',
+                      help="read a mat file for locs matrix (filepath)",
+                      required=False,
+                      default=None,
+                      type=str
+                      ):
+        self._add_argument(dict(locals()))
+
     def add_n_resp_states(self,
                           option_string=("-n", "--nstates"),
                           metavar='',

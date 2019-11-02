@@ -6,7 +6,7 @@ Laurence Jackson, BME, KCL, 2019
 """
 
 import sys
-
+import scipy.io as sio
 from sweeprecon.ResampleData import ResampleData
 from sweeprecon.io.ArgParser import ArgParser
 from sweeprecon.io.ImageData import ImageData
@@ -37,6 +37,8 @@ def app_resample_data(pipeline=False):
         input_vars.add_kernel_dims(required=False)
         input_vars.add_n_threads(required=False)
         input_vars.add_flag_frangi(required=False)
+        input_vars.add_resp_method(required=False)
+        input_vars.add_read_locs_matlab(required=False)
 
         # parse
         args = input_vars.parse_args()
@@ -54,12 +56,17 @@ def app_resample_data(pipeline=False):
         write_paths = WritePaths(args)
         image = ImageData(write_paths.path_sorted())
 
-    if not logger.log.flag_estimated_respiration or not logger.log.flag_sorted:
-        print('Missing requirements: please run full pipeline through __main__')
-        sys.exit()
+    #if not logger.log.flag_estimated_respiration or not logger.log.flag_sorted:
+    #    print('Missing requirements: please run full pipeline through __main__')
+    #    sys.exit()
 
     if args.resp_method == 'graph':
+        # set up re-sampler
+        if args.locs_matlab is not None:
+            logger.log.graph_locs = sio.loadmat(args.locs_matlab)['locs']
+
         resampler = ResampleData(image,
+                                 #(logger.log.graph_locs, logger.log.px_py), # how to do it in future
                                  logger.log.graph_locs,
                                  logger.log.geo_slice_locations,
                                  write_paths,
@@ -69,7 +76,7 @@ def app_resample_data(pipeline=False):
                                  )
 
     elif args.resp_method =='ba':
-        # set up re-sampler
+
         resampler = ResampleData(image,
                                  logger.log.resp_states,
                                  logger.log.geo_slice_locations,

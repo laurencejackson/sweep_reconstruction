@@ -19,6 +19,7 @@ import numpy as np
 
 from scipy import interpolate
 from skimage.filters import frangi
+from skimage.transform import resize
 
 
 class ResampleData(object):
@@ -49,9 +50,14 @@ class ResampleData(object):
         self._states = states
         if self._states.ndim > 1:
             self._graph_resample = True
+            self._locs = states
+            #self._pxpy = states[1]
+            self._expand_graph_locs()
             self._nstates = 1
         else:
             self._nstates = np.max(states)
+            self._locs = None
+            self._pxpy = None
 
         self._slice_locations = slice_locations
         self._write_paths = write_paths
@@ -75,6 +81,11 @@ class ResampleData(object):
         if self._args.interpolator == 'rbf':
             self._interp_rbf()
 
+    def _expand_graph_locs(self):
+        """interpolate graph_locs up to full size"""
+        print('not ideal - simple resize of locs should switch to interpolated volume to reduce chance of errors')
+        self._locs = resize(self._locs, self._image.img.shape, order=0)
+
     def _write_resampled_data(self, image_obj, path):
         """Saves re-sampled image"""
         # TODO: can only correct for interpolation in z at the moment
@@ -84,7 +95,6 @@ class ResampleData(object):
     def _init_vols(self):
         """pre-allocates memory for interpolated volumes"""
         print('Pre-allocating 4D volume')
-        if
         self._img_4d = np.zeros(np.array([self._image.img.shape[0],
                                 self._image.img.shape[1],
                                 (self._image.nii.header['pixdim'][3] * self._image.nii.header['dim'][3]) / self._dxyz[2],
@@ -135,14 +145,19 @@ class ResampleData(object):
 
             for xx in np.nditer(self._xi):
                 for yy in np.nditer(self._yi):
-                    slice_idx = np.where(self._states == ww)
+
+                    if self._graph_resample:
+                        slice_idx = np.squeeze(self._locs[xx, yy, :].astype(bool))
+                    else:
+                        slice_idx = np.where(self._states == ww)
+
                     zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
-                    z_interp = np.interp(self._zq, zs, self._image.img[xx, yy, slice_idx].flatten())
-                    self._img_4d[xx, yy, :, ww - 1] = z_interp.flatten()
+                    self._img_4d[xx, yy, :, ww - 1] = np.interp(self._zq, zs, self._image.img[xx, yy, slice_idx].flatten())
 
             # save single resp state volumes
-            self._image_resp_3d.set_data(self._img_4d[:, :, :, ww - 1])
-            self._write_resampled_data(self._image_resp_3d, self._write_paths.path_interpolated_3d_linear(ww))
+            if not self._graph_resample:
+                self._image_resp_3d.set_data(self._img_4d[:, :, :, ww - 1])
+                self._write_resampled_data(self._image_resp_3d, self._write_paths.path_interpolated_3d_linear(ww))
             print('---')
 
         # write to file
@@ -176,12 +191,12 @@ class ResampleData(object):
         for ww in range(1, self._nstates + 1):
             print('Interpolating resp window: %d' % ww)
             tt = time.time()
-            slice_idx = np.where(self._states == ww)
-            self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
+            #slice_idx = np.where(self._states == ww)
+            #self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
             sub_arrays = pool.starmap_async(self._rbf_interp_line,
-                                         [(self._get_training_y(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
-                                         self._get_training_x(xx, yy, slice_idx, kernel_dim=self._kernel_dims),
+                                         [(self._get_training_y(xx, yy, ww, kernel_dim=self._kernel_dims),
+                                         self._get_training_x(xx, yy, ww, kernel_dim=self._kernel_dims),
                                          self._get_zq(xx, yy, kernel_dim=self._kernel_dims))
                                           for xx in np.nditer(self._xi) for yy in np.nditer(self._yi)]).get()
 
@@ -221,8 +236,13 @@ class ResampleData(object):
         # print function duration info
         print('%s duration: %.1fs' % ('_interp_rbf', (time.time() - t1)))
 
-    def _get_training_y(self, x, y, slice_idx, kernel_dim=1):
+    def _get_training_y(self, x, y, ww, kernel_dim=1):
         """Gets array of training point values"""
+        if self._graph_resample:
+            slice_idx = np.argwhere(self._locs[x, y, :])
+        else:
+            slice_idx = np.where(self._states == ww)
+
         if kernel_dim > 1:
             training_x = self._get_pixels_xy(x, y, slice_idx, kernel_dim=kernel_dim)
             training_y = self._image.img[training_x[0, :], training_x[1, :], training_x[2, :]].transpose()
@@ -231,8 +251,13 @@ class ResampleData(object):
 
         return training_y
 
-    def _get_training_x(self, x, y, slice_idx, kernel_dim=1):
+    def _get_training_x(self, x, y, ww, kernel_dim=1):
         """Gets array of training point co-ordinates"""
+        if self._graph_resample:
+            slice_idx = np.argwhere(self._locs[x, y, :])
+        else:
+            slice_idx = np.where(self._states == ww)
+
         if kernel_dim > 1:
             training_x = self._get_pixels_xy(x, y, slice_idx, kernel_dim=kernel_dim).transpose()
 
@@ -241,7 +266,7 @@ class ResampleData(object):
             training_x[:, 1] = training_x[:, 1] * self._image.nii.header['pixdim'][2]
             training_x[:, 2] = training_x[:, 2] * self._image.nii.header['pixdim'][3]
         else:
-            training_x = self._zs.reshape(-1, 1)
+            training_x = (self._slice_locations[slice_idx, ]).flatten()
 
         return training_x
 
