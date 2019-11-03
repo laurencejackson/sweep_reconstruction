@@ -170,7 +170,9 @@ class Reconstruction(object):
         """Uses MIRTK extract-image-region function to extract patches"""
         # extract-image-region <input> <output> [options] -patch <i> <j> <k> <nx> [<ny> [<nz>]]
         # normalise image intensity before splitting
-        self._normalise_intensity(image)
+        normalise = False
+        if normalise:
+            self._normalise_intensity(image)
         # defaults to full image if given dimension is zero
         if self._args.patchsize[0] == 0:
             self._args.patchsize[0] = image.img.shape[0]
