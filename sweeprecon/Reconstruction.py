@@ -149,7 +149,7 @@ class Reconstruction(object):
             "ffd": False,
 
             # hard-coded options
-            "iterations": 2,
+            "iterations": 1,
             "resolution": 0.75,
             "sr_iterations": 4,
             # "filter": 10,
@@ -219,49 +219,6 @@ class Reconstruction(object):
                     print(command_string)
                     subprocess.run(command_string.split())
 
-    def _normalise_intensity(self, image, scale=['0', '3000']):
-        """ Normalises intensity before patch splitting"""
-        print('Normalising pixel values for %s' % image.imagefilepath)
-        command_string = 'mirtk convert-image ' + image.imagefilepath + ' ' + image.imagefilepath + ' -rescale ' + ' '.join(scale)
-        print(command_string)
-        subprocess.run(command_string.split())
-
-    def _extract_patches_internal(self, image, patch_size=None, patch_stride=None, target=False):
-        """Extracts 2D patches with overlap and preserved geometry as NIfTI files"""
-        if patch_size is None:
-            patch_size = np.array([image.img.shape[0] / 2.1, image.img.shape[1] / 2.1, 0]).astype(int)
-
-        if patch_stride is None:
-            patch_stride = (patch_size * 0.3).astype(int)
-
-        rect_list = self._patch_list_xy(image.img.shape, patch_size, patch_stride)
-        self._npatches = rect_list.shape[0]
-        zlist, zsegs = self._patch_list_dim(image.img.shape[2], patch_size[2], patch_stride[2])
-
-        for patch_ind in range(rect_list.shape[0]):
-            crop_rect = np.array([[rect_list[patch_ind, 0], rect_list[patch_ind, 1]],
-                                 [rect_list[patch_ind, 2], rect_list[patch_ind, 3]]]).astype(int)
-
-            for zz in range(zlist.shape[0]):
-                if target:  # loop
-                    for ww in range(0, image.img.shape[3]):
-                        temp_image = copy.deepcopy(image)
-                        temp_image.square_crop(rect=crop_rect, crop_t=ww)
-                        temp_image.write_nii(self._write_paths.path_patch_img(patch_ind, zz, ww=ww, target=target))
-                else:
-                    temp_image = copy.deepcopy(image)
-                    temp_image.square_crop(rect=crop_rect)
-                    temp_image.write_nii(self._write_paths.path_patch_img(patch_ind, zz, target=target))
-
-                    for ww in range(1,  np.max(self._states) + 1):
-                        slice_idx = np.where((self._states != ww) &
-                                             (self._states != 0) &
-                                             (range(0, temp_image.img.shape[2]) >= zlist[zz, 0]) &
-                                             (range(0, temp_image.img.shape[2]) <= zlist[zz, 1]))
-
-                        exc_list = np.array(slice_idx).astype(int)
-                        np.savetxt(self._write_paths.path_patch_txt(patch_ind, zz, ww), exc_list, fmt='%d', newline=' ')
-
     def _patch_list_xy(self, img_size, patch_size, patch_stride):
         """ Modifies stride so that the desired patch size fits within the image slice - returns rect list"""
 
@@ -304,3 +261,11 @@ class Reconstruction(object):
                 plist[ii, :] = [(ii * (patch_size - stride)), ((ii+1) * (patch_size - stride) + stride)]
 
         return plist, nsegs
+
+    @staticmethod
+    def _normalise_intensity(image, scale=['0', '3000']):
+        """ Normalises intensity before patch splitting"""
+        print('Normalising pixel values for %s' % image.imagefilepath)
+        command_string = 'mirtk convert-image ' + image.imagefilepath + ' ' + image.imagefilepath + ' -rescale ' + ' '.join(scale)
+        print(command_string)
+        subprocess.run(command_string.split())

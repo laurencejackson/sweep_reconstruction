@@ -42,6 +42,7 @@ def app_reconstruct_data(pipeline=False):
         input_vars.add_flag_ffd_recon(required=False)
         input_vars.add_patch_size(required=False)
         input_vars.add_patch_stride(required=False)
+        input_vars.add_resp_method(required=False)
 
         # parse
         args = input_vars.parse_args()
@@ -64,6 +65,8 @@ def app_reconstruct_data(pipeline=False):
     #if not logger.log.flag_estimated_respiration or not logger.log.flag_sorted or not logger.log.flag_resampled:
     #    print('Missing requirements: please run full pipeline through __main__')
     #    sys.exit()
+    if args.resp_method == 'graph':
+        logger.log.resp_states = 1
 
     # set up re-sampler
     reconstructor = Reconstruction(image,
