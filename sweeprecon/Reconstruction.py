@@ -149,7 +149,7 @@ class Reconstruction(object):
             "ffd": False,
 
             # hard-coded options
-            "iterations": 1,
+            "iterations": 2,
             "resolution": 0.75,
             "sr_iterations": 4,
             # "filter": 10,
@@ -285,7 +285,8 @@ class Reconstruction(object):
             self.resp_range = range(mode_state, mode_state+1)
             print('Reconstructing only state: %d' % mode_state.astype(int))
         else:
-            self.resp_range = range(1, np.max(self._states) + 1)
+            self.resp_range = range(1, np.max(self._states) + 1)  # resp range equal to tdim of target
+            # self.resp_range = range(1, np.max(self._states) + 1)
 
     @ staticmethod
     def _patch_list_dim(dim_size, patch_size, stride):

@@ -61,9 +61,9 @@ def app_reconstruct_data(pipeline=False):
         image = ImageData(write_paths.path_sorted())
         target = ImageData(logger.log.target)
 
-    if not logger.log.flag_estimated_respiration or not logger.log.flag_sorted or not logger.log.flag_resampled:
-        print('Missing requirements: please run full pipeline through __main__')
-        sys.exit()
+    #if not logger.log.flag_estimated_respiration or not logger.log.flag_sorted or not logger.log.flag_resampled:
+    #    print('Missing requirements: please run full pipeline through __main__')
+    #    sys.exit()
 
     # set up re-sampler
     reconstructor = Reconstruction(image,

@@ -184,9 +184,11 @@ class ResampleData(object):
         else:
             cores = self._n_threads
 
-        #if cores > 1:
-        #    print('Starting pool [%d processes]' % cores)
-        #    pool = mp.Pool(cores)
+        multiprocess = False
+
+        if multiprocess > 1:
+            print('Starting pool [%d processes]' % cores)
+            pool = mp.Pool(cores)
 
         t1 = time.time()
 
@@ -197,26 +199,27 @@ class ResampleData(object):
                 #slice_idx = np.where(self._states == ww)
                 #self._zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
 
-                # sub_arrays = pool.starmap_async(self._rbf_interp_line,
-                #                              [(self._get_training_y(xx, yy, ww, kernel_dim=self._kernel_dims),
-                #                              self._get_training_x(xx, yy, ww, kernel_dim=self._kernel_dims),
-                #                              self._get_zq(xx, yy, self._zq, self._image.nii.header['pixdim'], kernel_dim=self._kernel_dims))
-                #                               for xx in np.nditer(self._xi) for yy in np.nditer(self._yi)]).get()
-
-                sub_arrays = Parallel(n_jobs=cores)(delayed(self._rbf_interp_line)(self._get_training_y(xx, yy, ww, kernel_dim=self._kernel_dims),
-                                                self._get_training_x(xx, yy, ww, kernel_dim=self._kernel_dims),
-                                                self._get_zq(xx, yy, self._zq, self._image.nii.header['pixdim'],
-                                                             kernel_dim=self._kernel_dims))
-                                               for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))
+                if multiprocess:
+                    sub_arrays = pool.starmap_async(self._rbf_interp_line,
+                                                 [(self._get_training_y(xx, yy, ww, kernel_dim=self._kernel_dims),
+                                                 self._get_training_x(xx, yy, ww, kernel_dim=self._kernel_dims),
+                                                 self._get_zq(xx, yy, self._zq, self._image.nii.header['pixdim'], kernel_dim=self._kernel_dims))
+                                                  for xx in np.nditer(self._xi) for yy in np.nditer(self._yi)]).get()
+                else:
+                    sub_arrays = Parallel(n_jobs=cores)(delayed(self._rbf_interp_line)
+                                                        (self._get_training_y(xx, yy, ww, kernel_dim=self._kernel_dims),
+                                                         self._get_training_x(xx, yy, ww, kernel_dim=self._kernel_dims),
+                                                         self._get_zq(xx, yy, self._zq, self._image.nii.header['pixdim'], kernel_dim=self._kernel_dims))
+                                                         for xx in np.nditer(self._xi) for yy in np.nditer(self._yi))
 
                 print('%s duration: %.1fs' % ('_interp_rbf', (time.time() - tt)))
 
                 # insert interpolated data into pre-allocated volume
-                print('\ncollecting data')
                 index = 0
                 for xx in np.nditer(self._xi):
                     for yy in np.nditer(self._yi):
-                        self._img_4d[xx, yy, :, ww - 1] = sub_arrays[index].flatten()
+                        print((xx, yy))
+                        self._img_4d[xx, yy, :, ww - 1] = sub_arrays[index]
                         index = index + 1
             else:
                 for xx in np.nditer(self._xi):
@@ -232,7 +235,7 @@ class ResampleData(object):
 
             print('---')
 
-        if cores > 1:
+        if multiprocess > 1:
             pool.close()
             pool.join()
 
@@ -253,7 +256,7 @@ class ResampleData(object):
         # print function duration info
         print('%s duration: %.1fs' % ('_interp_rbf', (time.time() - t1)))
 
-    def _get_training_y(self, x, y, ww, kernel_dim=1):
+    def _get_training_y(self, x, y, ww, kernel_dim=3):
         """Gets array of training point values"""
         if self._graph_resample:
             slice_idx = self._find_nearest_locs(self._locs, self._pxpy, x, y)
@@ -268,7 +271,7 @@ class ResampleData(object):
 
         return training_y
 
-    def _get_training_x(self, x, y, ww, kernel_dim=1):
+    def _get_training_x(self, x, y, ww, kernel_dim=3):
         """Gets array of training point co-ordinates"""
         if self._graph_resample:
             slice_idx = self._find_nearest_locs(self._locs, self._pxpy, x, y)
