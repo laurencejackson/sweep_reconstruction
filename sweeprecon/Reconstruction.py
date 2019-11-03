@@ -130,8 +130,14 @@ class Reconstruction(object):
         """Recombines patches to common space"""
         # combine_patches
         # Usage: combine_patches[target_volume][output_resolution][N][stack_1]..[stack_N]
+        graph = True
+        if graph:
+            target_space_path = self._target.imagefilepath
+        else:
+            target_space_path = self._write_paths.path_interpolated_3d_linear(1)
+
         command_string_1 = str('%s %s %f %d' % (function_path,
-                                                self._write_paths.path_interpolated_3d_linear(1),
+                                                target_space_path,
                                                 self._svr_opts['resolution'],
                                                 self._npatches))
 
