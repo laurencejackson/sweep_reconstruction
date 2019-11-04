@@ -177,7 +177,7 @@ class Reconstruction(object):
         # extract-image-region <input> <output> [options] -patch <i> <j> <k> <nx> [<ny> [<nz>]]
         # normalise image intensity before splitting
 
-        normalise = False
+        normalise = True
         if normalise:
             self._normalise_intensity(image)
 
