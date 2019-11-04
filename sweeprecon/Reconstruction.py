@@ -56,7 +56,8 @@ class Reconstruction(object):
 
         # TODO read more opts from args
         opts = {'thickness': self._args.thickness,
-                'ffd': self._args.free_form_deformation}
+                'ffd': self._args.free_form_deformation,
+                'remote': self._args.remote}
 
         self._process_patches('reconstructAngio', opts)
 
@@ -153,6 +154,7 @@ class Reconstruction(object):
             # variable options
             "thickness": 2.5,
             "ffd": False,
+            "remote": False,
 
             # hard-coded options
             "iterations": 1,
@@ -165,7 +167,6 @@ class Reconstruction(object):
             # "-cp_spacing": 5.0,
             "ncc": True,
             "gaussian_only": False,
-            "remote": True,
             "svr_only": True,
             "no_intensity_matching": True,
             "no_sr": False,
