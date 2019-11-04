@@ -183,7 +183,7 @@ class Reconstruction(object):
 
         # defaults to full image if given dimension is zero
         if self._args.patchsize[0] == 0:
-            self._args.patchsize[0] = image.img.shape[0]
+            self._args.patchsize_given[0] = image.img.shape[0]
             xlocs = [int(image.img.shape[0]/2)]
         else:
             xlocs = np.arange(int(self._args.patchsize[0]/2),
@@ -191,7 +191,7 @@ class Reconstruction(object):
                               self._args.patchstride[0])
 
         if self._args.patchsize[1] == 0:
-            self._args.patchsize[1] = image.img.shape[1]
+            self._args.patchsize_given[1] = image.img.shape[1]
             ylocs =[int(image.img.shape[1] / 2)]
         else:
             ylocs = np.arange(int(self._args.patchsize[1]/2),
@@ -216,7 +216,7 @@ class Reconstruction(object):
             for nx, xi in enumerate(xlocs):
                 for ny, yi in enumerate(ylocs):
                     patch_ind = ny + (nx * xlocs.__len__())
-                    pixel_region = (xi, yi, zlocs, self._args.patchsize[0], self._args.patchsize[1], zsize)
+                    pixel_region = (xi, yi, zlocs, self._args.patchsize_given[0], self._args.patchsize_given[1], zsize)
                     pixel_region = [str(i) for i in pixel_region]  # convert to string list
                     if target:
                         tstring = ' -Rt1 ' + str(ti) + ' -Rt2 ' + str(ti)
