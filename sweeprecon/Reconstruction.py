@@ -176,9 +176,11 @@ class Reconstruction(object):
         """Uses MIRTK extract-image-region function to extract patches"""
         # extract-image-region <input> <output> [options] -patch <i> <j> <k> <nx> [<ny> [<nz>]]
         # normalise image intensity before splitting
+
         normalise = True
         if normalise:
             self._normalise_intensity(image)
+
         # defaults to full image if given dimension is zero
         if self._args.patchsize[0] == 0:
             self._args.patchsize[0] = image.img.shape[0]
@@ -271,7 +273,7 @@ class Reconstruction(object):
         return plist, nsegs
 
     @staticmethod
-    def _normalise_intensity(image, scale=['0', '3000']):
+    def _normalise_intensity(image, scale=['0', '1000']):
         """ Normalises intensity before patch splitting"""
         print('Normalising pixel values for %s' % image.imagefilepath)
         command_string = 'mirtk convert-image ' + image.imagefilepath + ' ' + image.imagefilepath + ' -rescale ' + ' '.join(scale)
