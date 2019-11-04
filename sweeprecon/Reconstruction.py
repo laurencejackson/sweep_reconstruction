@@ -190,19 +190,22 @@ class Reconstruction(object):
             _patchsize_internal[0] = image.img.shape[0]
             xlocs = [int(image.img.shape[0]/2)]
         else:
+            fact = np.ceil(((image.img.shape[0] - int(self._args.patchsize[0] / 2)) - int(self._args.patchsize[0] / 2))/self._args.patchstride[0])
+            stride = np.int_(((image.img.shape[0] - int(self._args.patchsize[0] / 2)) - int(self._args.patchsize[0] / 2))/fact)
             xlocs = np.arange(int(self._args.patchsize[0]/2),
                               image.img.shape[0] - int(self._args.patchsize[0]/2),
-                              self._args.patchstride[0])
+                              stride)
 
         if self._args.patchsize[1] == 0:
             _patchsize_internal[1] = image.img.shape[1]
             ylocs =[int(image.img.shape[1] / 2)]
         else:
+            fact = np.ceil(((image.img.shape[1] - int(self._args.patchsize[1]/2)) - int(self._args.patchsize[1]/2))/self._args.patchstride[1])
+            stride = np.int_(((image.img.shape[1] - int(self._args.patchsize[1]/2)) - int(self._args.patchsize[1]/2))/fact)
             ylocs = np.arange(int(self._args.patchsize[1]/2),
                               image.img.shape[1] - int(self._args.patchsize[1]/2),
-                              self._args.patchstride[1])
+                              stride)
 
-        # TODO: handle when px defined but ps isnt
 
         # for now only patch in xy use full z depth
         zlocs = int(image.img.shape[2]/2)
