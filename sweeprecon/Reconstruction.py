@@ -212,26 +212,30 @@ class Reconstruction(object):
         self._patchsize_px[0] = np.floor(self._args.patchsize[0] / image.nii.header['pixdim'][1]).astype(int)
         self._patchsize_px[1] = np.floor(self._args.patchsize[1] / image.nii.header['pixdim'][2]).astype(int)
 
+        self._patchstride_px = [0, 0]
+        self._patchstride_px[0] = np.floor(self._args.patchstride[0] / image.nii.header['pixdim'][1]).astype(int)
+        self._patchstride_px[1] = np.floor(self._args.patchstride[1] / image.nii.header['pixdim'][2]).astype(int)
+
         # defaults to full image if given dimension is zero
         if self._patchsize_px[0] == 0:
             self._patchsize_px[0] = image.img.shape[0]
             xlocs = [int(image.img.shape[0]/2)]
         else:
-            fact = np.floor(((image.img.shape[0] - int(self._patchsize_px[0] / 2)) - int(self._patchsize_px[0] / 2))/self._patchsize_px[0])
-            stride = np.int_(((image.img.shape[0] - int(self._patchsize_px[0] / 2)) - int(self._patchsize_px[0] / 2))/fact)
-            xlocs = np.arange(int(self._patchsize_px[0]/2),
+            nstrides = 1 + np.ceil( (image.img.shape[0] - int(self._patchsize_px[0]/2) - int(self._patchsize_px[0]/2)) /
+                                self._patchstride_px[0])
+            xlocs = np.linspace(int(self._patchsize_px[0]/2),
                               image.img.shape[0] - int(self._patchsize_px[0]/2),
-                              stride)
+                              nstrides).astype(int)
 
         if self._patchsize_px[1] == 0:
             self._patchsize_px[1] = image.img.shape[1]
             ylocs =[int(image.img.shape[1] / 2)]
         else:
-            fact = np.floor(((image.img.shape[1] - int(self._patchsize_px[1]/2)) - int(self._patchsize_px[1]/2))/self._patchsize_px[1])
-            stride = np.int_(((image.img.shape[1] - int(self._patchsize_px[1]/2)) - int(self._patchsize_px[1]/2))/fact)
-            ylocs = np.arange(int(self._patchsize_px[1]/2),
-                              image.img.shape[1] - int(self._patchsize_px[1]/2),
-                              stride)
+            nstrides = 1 + np.ceil((image.img.shape[1] - int(self._patchsize_px[1] / 2) - int(self._patchsize_px[1] / 2)) /
+                               self._patchstride_px[1])
+            ylocs = np.linspace(int(self._patchsize_px[1] / 2),
+                                image.img.shape[1] - int(self._patchsize_px[1] / 2),
+                                nstrides).astype(int)
 
         # for now only patch in xy use full z depth
         zlocs = np.array([int(image.img.shape[2]/2)])
