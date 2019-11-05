@@ -219,22 +219,25 @@ class Reconstruction(object):
         if target:
             tlocs = np.arange(0,  np.max(self._states))
 
+        patch_ind = 0
         for nt, ti in enumerate(tlocs):
-            for nx, xi in enumerate(xlocs):
-                for ny, yi in enumerate(ylocs):
-                    patch_ind = ny + (nx * xlocs.__len__())
-                    pixel_region = (xi, yi, zlocs, _patchsize_internal[0], _patchsize_internal[1], zsize)
-                    pixel_region = [str(i) for i in pixel_region]  # convert to string list
-                    if target:
-                        tstring = ' -Rt1 ' + str(ti) + ' -Rt2 ' + str(ti)
+            for nz, zi in enumerate(tlocs):
+                for nx, xi in enumerate(xlocs):
+                    for ny, yi in enumerate(ylocs):
+                        # patch_ind = ny + (nx * xlocs.__len__())
+                        pixel_region = (xi, yi, zi, _patchsize_internal[0], _patchsize_internal[1], zsize)
+                        pixel_region = [str(i) for i in pixel_region]  # convert to string list
+                        if target:
+                            tstring = ' -Rt1 ' + str(ti) + ' -Rt2 ' + str(ti)
 
-                    command_string = 'mirtk extract-image-region ' + \
-                                     image.imagefilepath + ' ' + \
-                                     self._write_paths.path_patch_img(patch_ind, '0', ww=nt, target=target) + \
-                                     ' -patch ' + ' '.join(pixel_region) + \
-                                     tstring
-                    print(command_string)
-                    subprocess.run(command_string.split())
+                        command_string = 'mirtk extract-image-region ' + \
+                                         image.imagefilepath + ' ' + \
+                                         self._write_paths.path_patch_img(patch_ind, '0', ww=nt, target=target) + \
+                                         ' -patch ' + ' '.join(pixel_region) + \
+                                         tstring
+                        print(command_string)
+                        subprocess.run(command_string.split())
+                        patch_ind = +1
 
     def _patch_list_xy(self, img_size, patch_size, patch_stride):
         """ Modifies stride so that the desired patch size fits within the image slice - returns rect list"""
