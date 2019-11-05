@@ -212,6 +212,7 @@ class Reconstruction(object):
         zsize = image.img.shape[2]
 
         self._npatches = xlocs.__len__() * ylocs.__len__() * zlocs.__len__()
+        print('Creating %d patches' % self._npatches)
 
         # define time axis
         tstring = ''
