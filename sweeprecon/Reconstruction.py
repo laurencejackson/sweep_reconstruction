@@ -208,7 +208,7 @@ class Reconstruction(object):
 
 
         # for now only patch in xy use full z depth
-        zlocs = np.array(int(image.img.shape[2]/2))
+        zlocs = np.array([int(image.img.shape[2]/2)])
         zsize = image.img.shape[2]
 
         self._npatches = xlocs.__len__() * ylocs.__len__() * zlocs.__len__()
