@@ -54,10 +54,16 @@ class Reconstruction(object):
         # perform first SVR pass
         self._svr_options_init()
 
+        if self._args.iterations > 1:
+            resv = np.linspace(1.5*0.75, 0.75, self._args.iterations)
+        else:
+            resv = [0.75]
+
         # TODO read more opts from args
         opts = {'thickness': self._args.thickness,
                 'ffd': self._args.free_form_deformation,
-                'remote': self._args.remote}
+                'remote': self._args.remote,
+                'resolution': resv[0]}
 
         self._process_patches('reconstructAngio', opts, 0)
 
@@ -69,7 +75,8 @@ class Reconstruction(object):
                     self._svr_options_init()
                     opts = {'thickness': self._args.thickness,
                             'ffd': self._args.free_form_deformation,
-                            'remote': self._args.remote}
+                            'remote': self._args.remote,
+                            'resolution': resv[iteration]}
                     self._process_patches('reconstructAngio', opts, iteration)
 
     def _process_patches(self, function_path, opts, iteration):
