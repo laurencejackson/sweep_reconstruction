@@ -209,8 +209,8 @@ class Reconstruction(object):
 
         # convert patch size to pixels
         self._patchsize_px = [0, 0]
-        self._patchsize_px[0] = np.floor(image.nii.header['pixdim'][1] * self._args.patchsize[0]).astype(int)
-        self._patchsize_px[1] = np.floor(image.nii.header['pixdim'][2] * self._args.patchsize[1]).astype(int)
+        self._patchsize_px[0] = np.floor(self._args.patchsize[0] / image.nii.header['pixdim'][1]).astype(int)
+        self._patchsize_px[1] = np.floor(self._args.patchsize[1] / image.nii.header['pixdim'][2]).astype(int)
 
         # defaults to full image if given dimension is zero
         if self._patchsize_px[0] == 0:
