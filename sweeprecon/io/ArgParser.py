@@ -161,6 +161,16 @@ class ArgParser(object):
                       ):
         self._add_argument(dict(locals()))
 
+    def add_recon_iterations(self,
+                      option_string=("-it", "--iterations"),
+                      metavar='',
+                      help="number of reconstruction iterations (loops over full +patch recon)",
+                      required=False,
+                      type=int,
+                      default=1
+                      ):
+        self._add_argument(dict(locals()))
+
     def add_patch_size(self,
                        option_string=("-px", "--patchsize"),
                        metavar='',

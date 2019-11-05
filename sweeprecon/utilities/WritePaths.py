@@ -111,7 +111,7 @@ class WritePaths(object):
                             '.txt'  # file ext
                             )
 
-    def path_patch_img(self, xy, z, ww=0, target=False):
+    def path_patch_img(self, xy, z=0, ww=0, target=False):
 
         if not os.path.exists(self._patches_folder):
             os.makedirs(self._patches_folder)
@@ -171,6 +171,17 @@ class WritePaths(object):
                             self._recon_folder,
                             pre +
                             'IMG_3D_combined_' +
+                            str(resp_state) +
+                            self._nii_ext
+                            )
+
+    def final_reconstruction(self, resp_state, iterations=1, pre=''):
+        return os.path.join(os.getcwd(),  # cwd
+                            self._recon_folder,
+                            pre +
+                            'IMG_final_recon_it' +
+                            str(iterations) +
+                            '_' +
                             str(resp_state) +
                             self._nii_ext
                             )

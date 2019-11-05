@@ -59,14 +59,26 @@ class Reconstruction(object):
                 'ffd': self._args.free_form_deformation,
                 'remote': self._args.remote}
 
-        self._process_patches('reconstructAngio', opts)
+        self._process_patches('reconstructAngio', opts, 0)
 
-    def _process_patches(self, function_path, opts):
+        if self._args.iterations > 1:
+            for ww in self.resp_range:
+                for iteration in range(1, self._args.iterations):
+                    self._target = ImageData(self._write_paths.path_combined_patches(ww))
+                    self._extract_patches(self._target, target=True)
+                    self._svr_options_init()
+                    opts = {'thickness': self._args.thickness,
+                            'ffd': self._args.free_form_deformation,
+                            'remote': self._args.remote}
+                    self._process_patches('reconstructAngio', opts, iteration)
+
+    def _process_patches(self, function_path, opts, iteration):
         """Loop over patch directory structure and apply function"""
 
         # loop over resp states
         nstacks = 1  # likely to only work with one but I'll make this a variable anyway
         self._set_resp_range()
+        print('Reconstruction iteration %d' % iteration)
 
         for ww in self.resp_range:
             # loop over patches
@@ -87,7 +99,12 @@ class Reconstruction(object):
             self._recombine_patches('combine_patches')
 
             # rename output
-            os.rename('combined.nii.gz', self._write_paths.path_combined_patches(ww))
+            # os.rename('combined.nii.gz', self._write_paths.path_combined_patches(ww))
+
+            if iteration == self._args.iterations - 1:
+                os.rename('combined.nii.gz', self._write_paths.final_reconstruction(ww, iterations=self._args.iterations))
+            else:
+                os.rename('combined.nii.gz', self._write_paths.path_combined_patches(ww))
 
             if self._args.frangi:
                 img_frangi = ImageData(self._write_paths.path_combined_patches(ww))
@@ -222,7 +239,7 @@ class Reconstruction(object):
 
         patch_ind = 0
         for nt, ti in enumerate(tlocs):
-            for nz, zi in enumerate(tlocs):
+            for nz, zi in enumerate(zlocs):
                 for nx, xi in enumerate(xlocs):
                     for ny, yi in enumerate(ylocs):
                         # patch_ind = ny + (nx * xlocs.__len__())
@@ -233,7 +250,7 @@ class Reconstruction(object):
 
                         command_string = 'mirtk extract-image-region ' + \
                                          image.imagefilepath + ' ' + \
-                                         self._write_paths.path_patch_img(patch_ind, '0', ww=nt, target=target) + \
+                                         self._write_paths.path_patch_img(patch_ind, zz=nz, ww=nt, target=target) + \
                                          ' -patch ' + ' '.join(pixel_region) + \
                                          tstring
                         print(command_string)
