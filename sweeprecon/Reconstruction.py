@@ -64,7 +64,7 @@ class Reconstruction(object):
         if self._args.iterations > 1:
             for ww in self.resp_range:
                 for iteration in range(1, self._args.iterations):
-                    self._target = ImageData(self._write_paths.path_combined_patches(ww))
+                    self._target = ImageData(self._write_paths.path_combined_patches(ww, iteration-1))
                     self._extract_patches(self._target, target=True)
                     self._svr_options_init()
                     opts = {'thickness': self._args.thickness,
@@ -104,7 +104,7 @@ class Reconstruction(object):
             if iteration == self._args.iterations - 1:
                 os.rename('combined.nii.gz', self._write_paths.final_reconstruction(ww, iterations=self._args.iterations))
             else:
-                os.rename('combined.nii.gz', self._write_paths.path_combined_patches(ww))
+                os.rename('combined.nii.gz', self._write_paths.path_combined_patches(ww, iteration))
 
             if self._args.frangi:
                 img_frangi = ImageData(self._write_paths.path_combined_patches(ww))
@@ -255,7 +255,7 @@ class Reconstruction(object):
                                          tstring
                         print(command_string)
                         subprocess.run(command_string.split())
-                        patch_ind = +1
+                        patch_ind += 1
 
     def _patch_list_xy(self, img_size, patch_size, patch_stride):
         """ Modifies stride so that the desired patch size fits within the image slice - returns rect list"""
