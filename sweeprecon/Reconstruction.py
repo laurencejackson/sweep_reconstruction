@@ -250,7 +250,7 @@ class Reconstruction(object):
 
                         command_string = 'mirtk extract-image-region ' + \
                                          image.imagefilepath + ' ' + \
-                                         self._write_paths.path_patch_img(patch_ind, zz=nz, ww=nt, target=target) + \
+                                         self._write_paths.path_patch_img(patch_ind, z=nz, ww=nt, target=target) + \
                                          ' -patch ' + ' '.join(pixel_region) + \
                                          tstring
                         print(command_string)

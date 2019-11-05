@@ -111,7 +111,7 @@ class WritePaths(object):
                             '.txt'  # file ext
                             )
 
-    def path_patch_img(self, xy, zz=0, ww=0, target=False):
+    def path_patch_img(self, xy, z=0, ww=0, target=False):
 
         if not os.path.exists(self._patches_folder):
             os.makedirs(self._patches_folder)
