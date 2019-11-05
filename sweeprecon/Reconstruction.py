@@ -230,7 +230,6 @@ class Reconstruction(object):
                               image.img.shape[1] - int(self._args.patchsize[1]/2),
                               stride)
 
-
         # for now only patch in xy use full z depth
         zlocs = np.array([int(image.img.shape[2]/2)])
         zsize = image.img.shape[2]
