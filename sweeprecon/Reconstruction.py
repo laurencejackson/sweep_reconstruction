@@ -217,7 +217,7 @@ class Reconstruction(object):
             self._patchsize_px[0] = image.img.shape[0]
             xlocs = [int(image.img.shape[0]/2)]
         else:
-            fact = np.floor(((image.img.shape[0] - int(self._patchsize_px[0] / 2)) - int(self._patchsize_px[0] / 2))/self._args.patchstride[0])
+            fact = np.ceil(((image.img.shape[0] - int(self._patchsize_px[0] / 2)) - int(self._patchsize_px[0] / 2))/self._patchsize_px[0])
             stride = np.int_(((image.img.shape[0] - int(self._patchsize_px[0] / 2)) - int(self._patchsize_px[0] / 2))/fact)
             xlocs = np.arange(int(self._patchsize_px[0]/2),
                               image.img.shape[0] - int(self._patchsize_px[0]/2),
@@ -227,7 +227,7 @@ class Reconstruction(object):
             self._patchsize_px[1] = image.img.shape[1]
             ylocs =[int(image.img.shape[1] / 2)]
         else:
-            fact = np.floor(((image.img.shape[1] - int(self._patchsize_px[1]/2)) - int(self._patchsize_px[1]/2))/self._args.patchstride[1])
+            fact = np.ceil(((image.img.shape[1] - int(self._patchsize_px[1]/2)) - int(self._patchsize_px[1]/2))/self._patchsize_px[1])
             stride = np.int_(((image.img.shape[1] - int(self._patchsize_px[1]/2)) - int(self._patchsize_px[1]/2))/fact)
             ylocs = np.arange(int(self._patchsize_px[1]/2),
                               image.img.shape[1] - int(self._patchsize_px[1]/2),
