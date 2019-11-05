@@ -69,7 +69,7 @@ def app_resample_data(pipeline=False):
         resampler = ResampleData(image,
                                  (logger.log.graph_locs, logger.log.px_py), # how to do it in future
                                  #logger.log.graph_locs,
-                                 logger.log.geo_slice_locations,
+                                 image.slice_positions(),
                                  write_paths,
                                  args,
                                  kernel_dims=args.kernel_dims,
