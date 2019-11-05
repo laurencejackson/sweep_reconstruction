@@ -171,7 +171,7 @@ class WritePaths(object):
                             self._recon_folder,
                             pre +
                             'IMG_3D_combined_it' +
-                            iteration +
+                            str(iteration) +
                             '_' +
                             str(resp_state) +
                             self._nii_ext
