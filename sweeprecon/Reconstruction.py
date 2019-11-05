@@ -207,27 +207,30 @@ class Reconstruction(object):
         if normalise:
             self._normalise_intensity(image)
 
-        # defaults to full image if given dimension is zero
-        _patchsize_internal = copy.deepcopy(self._args.patchsize)
+        # convert patch size to pixels
+        self._patchsize_px = [0, 0]
+        self._patchsize_px[0] = np.floor(image.nii.header['pixdim'][1] * self._args.patchsize[0]).astype(int)
+        self._patchsize_px[1] = np.floor(image.nii.header['pixdim'][2] * self._args.patchsize[1]).astype(int)
 
-        if self._args.patchsize[0] == 0:
-            _patchsize_internal[0] = image.img.shape[0]
+        # defaults to full image if given dimension is zero
+        if self._patchsize_px[0] == 0:
+            self._patchsize_px[0] = image.img.shape[0]
             xlocs = [int(image.img.shape[0]/2)]
         else:
-            fact = np.ceil(((image.img.shape[0] - int(self._args.patchsize[0] / 2)) - int(self._args.patchsize[0] / 2))/self._args.patchstride[0])
-            stride = np.int_(((image.img.shape[0] - int(self._args.patchsize[0] / 2)) - int(self._args.patchsize[0] / 2))/fact)
-            xlocs = np.arange(int(self._args.patchsize[0]/2),
-                              image.img.shape[0] - int(self._args.patchsize[0]/2),
+            fact = np.ceil(((image.img.shape[0] - int(self._patchsize_px[0] / 2)) - int(self._patchsize_px[0] / 2))/self._args.patchstride[0])
+            stride = np.int_(((image.img.shape[0] - int(self._patchsize_px[0] / 2)) - int(self._patchsize_px[0] / 2))/fact)
+            xlocs = np.arange(int(self._patchsize_px[0]/2),
+                              image.img.shape[0] - int(self._patchsize_px[0]/2),
                               stride)
 
-        if self._args.patchsize[1] == 0:
-            _patchsize_internal[1] = image.img.shape[1]
+        if self._patchsize_px[1] == 0:
+            self._patchsize_px[1] = image.img.shape[1]
             ylocs =[int(image.img.shape[1] / 2)]
         else:
-            fact = np.ceil(((image.img.shape[1] - int(self._args.patchsize[1]/2)) - int(self._args.patchsize[1]/2))/self._args.patchstride[1])
-            stride = np.int_(((image.img.shape[1] - int(self._args.patchsize[1]/2)) - int(self._args.patchsize[1]/2))/fact)
-            ylocs = np.arange(int(self._args.patchsize[1]/2),
-                              image.img.shape[1] - int(self._args.patchsize[1]/2),
+            fact = np.ceil(((image.img.shape[1] - int(self._patchsize_px[1]/2)) - int(self._patchsize_px[1]/2))/self._args.patchstride[1])
+            stride = np.int_(((image.img.shape[1] - int(self._patchsize_px[1]/2)) - int(self._patchsize_px[1]/2))/fact)
+            ylocs = np.arange(int(self._patchsize_px[1]/2),
+                              image.img.shape[1] - int(self._patchsize_px[1]/2),
                               stride)
 
         # for now only patch in xy use full z depth
@@ -249,7 +252,7 @@ class Reconstruction(object):
                 for nx, xi in enumerate(xlocs):
                     for ny, yi in enumerate(ylocs):
                         # patch_ind = ny + (nx * xlocs.__len__())
-                        pixel_region = (xi, yi, zi, _patchsize_internal[0], _patchsize_internal[1], zsize)
+                        pixel_region = (xi, yi, zi, self._patchsize_px[0], self._patchsize_px[1], zsize)
                         pixel_region = [str(i) for i in pixel_region]  # convert to string list
                         if target:
                             tstring = ' -Rt1 ' + str(ti) + ' -Rt2 ' + str(ti)

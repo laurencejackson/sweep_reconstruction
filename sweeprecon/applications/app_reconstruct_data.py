@@ -45,6 +45,7 @@ def app_reconstruct_data(pipeline=False):
         input_vars.add_patch_stride(required=False)
         input_vars.add_resp_method(required=False)
         input_vars.add_recon_iterations(required=False)
+
         # parse
         args = input_vars.parse_args()
         write_paths = WritePaths(args)

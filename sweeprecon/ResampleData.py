@@ -152,7 +152,7 @@ class ResampleData(object):
                     else:
                         slice_idx = np.where(self._states == ww)
 
-                    if slice_idx.size > 2:  # only interpolate if data is there
+                    if slice_idx.__len__() > 2:  # only interpolate if data is there
                         zs = (self._slice_locations[slice_idx, ]).flatten()  # z-sample points
                         self._img_4d[xx, yy, :, ww - 1] = np.interp(self._zq, zs, self._image.img[xx, yy, slice_idx].flatten())
 
