@@ -82,11 +82,6 @@ class ResampleData(object):
         if self._args.interpolator == 'rbf':
             self._interp_rbf()
 
-    def _expand_graph_locs(self):
-        """interpolate graph_locs up to full size"""
-        print('not ideal - simple resize of locs should switch to interpolated volume to reduce chance of errors')
-        #self._locs = resize(self._locs, self._image.img.shape, order=0).astype(bool)
-
     def _write_resampled_data(self, image_obj, path):
         """Saves re-sampled image"""
         # TODO: can only correct for interpolation in z at the moment

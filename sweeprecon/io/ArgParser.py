@@ -82,6 +82,16 @@ class ArgParser(object):
                             ):
         self._add_argument(dict(locals()))
 
+    def add_window_size(self,
+                            option_string=("-ws", "--window_size"),
+                            metavar='',
+                            help="window size for graph recon [mm]",
+                            required=False,
+                            default=6,
+                            type=float
+                            ):
+        self._add_argument(dict(locals()))
+
     def add_crop_fraction(self,
                           option_string=("-cf", "--crop_fraction"),
                           metavar='',

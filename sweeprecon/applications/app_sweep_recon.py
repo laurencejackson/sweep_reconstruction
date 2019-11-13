@@ -35,6 +35,7 @@ def main():
 
     # optional
     input_vars.add_slice_thickness(required=False)
+    input_vars.add_window_size(required=False)
     input_vars.add_n_resp_states(required=False)
     input_vars.add_flag_redo(required=False)
     input_vars.add_flag_disable_resp_crop(required=False)

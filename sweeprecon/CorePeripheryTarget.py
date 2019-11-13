@@ -9,10 +9,12 @@ import time
 import numpy as np
 import copy
 import itertools
+import random
 
 from multiprocessing import Pool, cpu_count
 from scipy.ndimage import gaussian_filter
 from bct import core_periphery_dir
+from scipy.stats import norm
 
 import matplotlib.pyplot as plt
 
@@ -23,15 +25,19 @@ class CorePeripheryTarget(object):
         """Initialise"""
         self._image = img
         self._filtered_image = copy.deepcopy(img)
-        self._img_local = copy.deepcopy(img)
+        self._img_local = None # copy.deepcopy(img)
         self._local_patch_size = local_patch_size
         self._args = args
         self._write_paths = write_paths
-        self._nsx = 3
-        self._nsy = 3
+        self._nsx = 8
+        self._nsy = 8
         self._adj = np.zeros((self._nsx, self._nsy, self._image.img.shape[2], self._image.img.shape[2]))
         self._sim = np.zeros(local_patch_size[2])
-        self.locs = np.zeros((self._nsx, self._nsy,self._image.img.shape[2]))
+        self.locs = np.zeros((self._nsx, self._nsy, self._image.img.shape[2]))
+
+        # vars
+        self.slice_thickness = self._args.thickness
+        self.window_size = min(0.5 * self._local_patch_size[2] - 1, (self._args.window_size / self._image.nii.header['pixdim'][3])).astype(int)
 
     def run(self):
 
@@ -53,7 +59,7 @@ class CorePeripheryTarget(object):
         x1 = max(self._local_patch_size[0]/2, (self._image.img.shape[0] / (self._nsx + 1)))
         x2 = min(self._image.img.shape[0] - self._local_patch_size[0]/2, (self._image.img.shape[0] - (self._image.img.shape[0] / (self._nsx+1))))
         y1 = max(self._local_patch_size[1]/2, (self._image.img.shape[1] / (self._nsy + 1)))
-        y2 = min(self._image.img.shape[1] - self._local_patch_size[1]/2,(self._image.img.shape[1] - (self._image.img.shape[1] / (self._nsy + 1))))
+        y2 = min(self._image.img.shape[1] - self._local_patch_size[1]/2, (self._image.img.shape[1] - (self._image.img.shape[1] / (self._nsy + 1))))
 
         self.px = np.linspace(x1, x2, self._nsx).astype(int)
         self.py = np.linspace(y1, y2, self._nsy).astype(int)
@@ -61,28 +67,37 @@ class CorePeripheryTarget(object):
         for nx, xx in enumerate(self.px):
             for ny, yy in enumerate(self.py):
                 print(' Analysing patch (%d,%d)' % (xx, yy), end=' ')
-                self._img_local = copy.deepcopy(self._filtered_image)
-                self._extract_local_patch(xx, yy)
+                self._extract_local_patch(xx, yy, focus=True)
                 self._adj[nx, ny, :, :] = self._local_sim(xx, yy)
-                self.locs[nx, ny, :] = self._core_periphery(np.squeeze(self._adj[nx, ny, :, :])).astype(int)
+                self.locs[nx, ny, :] = self._core_periphery(np.squeeze(self._adj[nx, ny, :, :]))
 
-    def _extract_local_patch(self, xx, yy):
+    def _extract_local_patch(self, xx, yy, focus=False):
         print('->Extracting local patch', end=' ')
-        x1 = np.int_(xx - self._local_patch_size[0]/2)
+        x1 = np.int_(xx - self._local_patch_size[0]/2)-1
         x2 = np.int_(xx + self._local_patch_size[0]/2)-1
-        y1 = np.int_(yy - self._local_patch_size[1]/2)
+        y1 = np.int_(yy - self._local_patch_size[1]/2)-1
         y2 = np.int_(yy + self._local_patch_size[1]/2)-1
 
-        local_rect = np.array([[x1, y1],
-                               [x2, y2]], dtype=int)
+        # self._img_local.square_crop(local_rect)
+        self._img_local = np.zeros((self._local_patch_size[0], self._local_patch_size[1], self._image.img.shape[2]))
+        self._img_local[:, :, :] = self._image.img[x1:x2, y1:y2, 0:self._image.img.shape[2]]
 
-        self._img_local.square_crop(local_rect)
+        if focus:
+            sig = self._local_patch_size[0] / 2
+            xxlin = np.arange(0, self._local_patch_size[0])
+            tkx = np.exp(-np.power(xxlin - sig, 2.) / (2 * np.power(sig, 2.)))
+            C = np.ones((self._local_patch_size[0], self._local_patch_size[1]))
+            C = tkx[:, np.newaxis] * C * tkx[np.newaxis, :]
+            C = (C - np.min(C)) / (np.max(C) - np.min(C))
+            for zz in range(0, self._image.img.shape[2]):
+                self._img_local[:, :, zz] = self._img_local[:, :, zz] * C
 
     def _local_sim(self, xx, yy):
         print('->Calculating local similarity', end=' ')
         # loop over target slices
-        sim_mat = np.zeros((self._image.img.shape[2], self._image.img.shape[2]))
-        for tt in range(0, self._img_local.img.shape[2] - 1):
+        sim_mat = np.zeros((self._img_local.shape[2], self._img_local.shape[2]))
+
+        for tt in range(0, self._img_local.shape[2] - 1):
             # loop over test slices
             _offset1 = 0
             _offset2 = self._local_patch_size[2]
@@ -94,7 +109,7 @@ class CorePeripheryTarget(object):
                     self._sim[nn] = 0
                     _offset2 += -1
                 else:
-                    self._sim[nn] = self._zncc(self._img_local.img[:, :, zz], self._img_local.img[:, :, tt])
+                    self._sim[nn] = self._zncc(self._img_local[:, :, zz], self._img_local[:, :, tt])
 
             sim_mat[tt, range(max(0, tt - int(self._local_patch_size[2] / 2)), min(tt + int(self._local_patch_size[2] / 2), self._image.img.shape[2]))] = self._sim[range(_offset1, _offset2),]  # .clip(min=0)  # set negative values to 0
 
@@ -103,9 +118,8 @@ class CorePeripheryTarget(object):
     def _core_periphery(self, C, WindowSize=16):
         """sliding window core/periphery graph"""
         print('->Assigning core/periphery ')
-        self.blockPrint()
-        gamma_inc = 0.01
-        gamma_max = 2.0
+        gamma_inc = 0.005
+        gamma_max = 1.8
         vecCore = np.zeros(C.shape[0])
         controlMethod = 'maxSeparation'
         coreMask = np.zeros((WindowSize, C.shape[0]))
@@ -121,24 +135,111 @@ class CorePeripheryTarget(object):
                     longest_sep = max(len(list(y)) for (c,y) in itertools.groupby(coreMask[:, n]) if c==0)
                     gamma = gamma + gamma_inc
                     if longest_sep > max_separation:
-                        coreMask[:, n] = core_periphery_dir(Caux, gamma - (2 * gamma_inc))[0]
+                        coreMask[:, n] = self._core_periphery_dir(Caux, gamma - (2 * gamma_inc))[0]
                         gamma = gamma - (2 * gamma_inc)
                     if gamma > gamma_max:
                         break
 
             vecCore[np.argwhere(coreMask[:, n] > 0) + n] = vecCore[np.argwhere(coreMask[:, n] > 0)+n] + 1
 
-        locs = vecCore > 2
-        self.enablePrint()
+        locs = vecCore > (0.2 * WindowSize)
+
         return locs
 
-    @staticmethod
-    def blockPrint():
-        sys.stdout = open(os.devnull, 'w')
+    def _core_periphery_dir(self, W, gamma=1, C0=None, seed=None):
+        """
+        Credit for _get_rng and _core_periphery_dir goes to bctpy and Roan LaPlante (https://github.com/aestrivex/bctpy)
 
-    @staticmethod
-    def enablePrint():
-        sys.stdout = sys.__stdout__
+       The optimal core/periphery subdivision is a partition of the network
+        into two nonoverlapping groups of nodes, a core group and a periphery
+        group. The number of core-group edges is maximized, and the number of
+        within periphery edges is minimized.
+        The core-ness is a statistic which quantifies the goodness of the
+        optimal core/periphery subdivision (with arbitrary relative value).
+        The algorithm uses a variation of the Kernighan-Lin graph partitioning
+        algorithm to optimize a core-structure objective described in
+        Borgatti & Everett (2000) Soc Networks 21:375-395
+        See Rubinov, Ypma et al. (2015) PNAS 112:10032-7
+        Parameters
+        ----------
+        W : NxN np.ndarray
+            directed connection matrix
+        gamma : core-ness resolution parameter
+            Default value = 1
+            gamma > 1 detects small core, large periphery
+            0 < gamma < 1 detects large core, small periphery
+        C0 : NxN np.ndarray
+            Initial core structure
+        seed : hashable, optional
+            If None (default), use the np.random's global random state to generate random numbers.
+            Otherwise, use a new np.random.RandomState instance seeded with the given value.
+        """
+        rng = self._get_rng(seed)
+        n = len(W)
+        np.fill_diagonal(W, 0)
+
+        if C0 == None:
+            C = rng.randint(2, size=(n,))
+        else:
+            C = C0.copy()
+
+        # methodological note, the core-detection null model is not corrected
+        # for degree cf community detection (to enable detection of hubs)
+
+        s = np.sum(W)
+        p = np.mean(W)
+        b = W - gamma * p
+        B = (b + b.T) / (2 * s)
+        cix, = np.where(C)
+        ncix, = np.where(np.logical_not(C))
+        q = np.sum(B[np.ix_(cix, cix)]) - np.sum(B[np.ix_(ncix, ncix)])
+
+        # sqish
+
+        flag = True
+        it = 0
+        while flag:
+            it += 1
+            if it > 100:
+                print('Infinite Loop - aborted')
+                break
+
+            flag = False
+            # initial node indices
+            ixes = np.arange(n)
+
+            Ct = C.copy()
+            while len(ixes) > 0:
+                Qt = np.zeros((n,))
+                ctix, = np.where(Ct)
+                nctix, = np.where(np.logical_not(Ct))
+                q0 = (np.sum(B[np.ix_(ctix, ctix)]) -
+                      np.sum(B[np.ix_(nctix, nctix)]))
+                Qt[ctix] = q0 - 2 * np.sum(B[ctix, :], axis=1)
+                Qt[nctix] = q0 + 2 * np.sum(B[nctix, :], axis=1)
+
+                max_Qt = np.max(Qt[ixes])
+                u, = np.where(np.abs(Qt[ixes] - max_Qt) < 1e-10)
+                # tunourn
+                u = u[rng.randint(len(u))]
+                Ct[ixes[u]] = np.logical_not(Ct[ixes[u]])
+                # casga
+
+                ixes = np.delete(ixes, u)
+
+                if max_Qt - q > 1e-10:
+                    flag = True
+                    C = Ct.copy()
+                    cix, = np.where(C)
+                    ncix, = np.where(np.logical_not(C))
+                    q = (np.sum(B[np.ix_(cix, cix)]) -
+                         np.sum(B[np.ix_(ncix, ncix)]))
+
+        cix, = np.where(C)
+        ncix, = np.where(np.logical_not(C))
+        q = np.sum(B[np.ix_(cix, cix)]) - np.sum(B[np.ix_(ncix, ncix)])
+
+        return C, q
 
     @staticmethod
     def _zncc(img1, img2):
@@ -191,3 +292,30 @@ class CorePeripheryTarget(object):
 
         # return recombined array
         return np.stack(sub_arrays, axis=2)
+
+    @staticmethod
+    def _get_rng(seed=None):
+        """
+        Credit for _get_rng and _core_periphery_dir goes to bctpy and Roan LaPlante (https://github.com/aestrivex/bctpy)
+
+        By default, or if `seed` is np.random, return the global RandomState
+        instance used by np.random.
+        If `seed` is a RandomState instance, return it unchanged.
+        Otherwise, use the passed (hashable) argument to seed a new instance
+        of RandomState and return it.
+        Parameters
+        ----------
+        seed : hashable or np.random.RandomState or np.random, optional
+        Returns
+        -------
+        np.random.RandomState
+        """
+        if seed is None or seed == np.random:
+            return np.random.mtrand._rand
+        elif isinstance(seed, np.random.RandomState):
+            return seed
+        try:
+            rstate = np.random.RandomState(seed)
+        except ValueError:
+            rstate = np.random.RandomState(random.Random(seed).randint(0, 2 ** 32 - 1))
+        return rstate

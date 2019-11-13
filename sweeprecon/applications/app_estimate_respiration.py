@@ -35,6 +35,8 @@ def app_estimate_respiration(pipeline=False):
         input_vars.add_input_file(required=True)
 
         # optional
+        input_vars.add_slice_thickness(required=False)
+        input_vars.add_window_size(required=False)
         input_vars.add_flag_redo(required=False)
         input_vars.add_flag_disable_resp_crop(required=False)
         input_vars.add_n_resp_states(required=False)
