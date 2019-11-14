@@ -69,9 +69,9 @@ class CorePeripheryTarget(object):
                 print('Analysing patch (%d,%d): %d/%d' % (xx, yy, (nx*self.px.size) + ny + 1, self.px.size * self.py.size), end=' ', flush=True)
                 t1 = time.time()
                 self._extract_local_patch(xx, yy, focus=True)
-                self._adj[nx, ny, :, :] = self._local_sim()
+                self._adj[nx, ny, :, :] = self._local_sim_parallel(pool)
                 self.locs[nx, ny, :] = self._core_periphery_parallel(np.squeeze(self._adj[nx, ny, :, :]), pool)
-                print((': time/patch %.2f' % (time.time()-t1)), flush=True)
+                print((': time/patch %.2fs' % (time.time()-t1)), flush=True)
 
         pool.close()
         pool.join()
@@ -117,6 +117,23 @@ class CorePeripheryTarget(object):
 
         return sim_mat
 
+    def _local_sim_parallel(self, pool):
+        """Creates adjacency matrix from local patch"""
+        print('->Calculating local similarity', end=' ', flush=True)
+        # loop over target slices
+        sim_mat = np.zeros((self._img_local.shape[2], self._img_local.shape[2]))
+
+        sub_arrays = pool.starmap_async(self._compare_neighbours,
+                                        [(self._zncc, tt, self._img_local, self._local_patch_size)
+                                         for tt in range(0, self._img_local.shape[2] - 1)]).get()
+
+        for tt in range(0, self._img_local.shape[2] - 1):
+            ti1 = max(0, tt - int(self._local_patch_size[2] / 2))
+            ti2 = min(self._image.img.shape[2] - 1, tt + int(self._local_patch_size[2] / 2))
+            sim_mat[tt, range(ti1, ti2)] = sub_arrays[tt]
+
+        return sim_mat
+
     def _core_periphery(self, C):
         """sliding window core/periphery graph"""
         print('->Assigning core/periphery ', end=' ', flush=True)
@@ -155,7 +172,7 @@ class CorePeripheryTarget(object):
 
     def _core_periphery_parallel(self, C, pool):
         """sliding window core/periphery graph"""
-        print('->Assigning core/periphery ', flush=True)
+        print('->Assigning core/periphery ', end=' ', flush=True)
 
         gamma_inc = 0.005
         gamma_max = 1.8
@@ -348,3 +365,16 @@ class CorePeripheryTarget(object):
             core_v = core_func(Caux, gamma_opt)[0]
 
         return core_v
+
+    @staticmethod
+    def _compare_neighbours(sim_func, tt, _img_local, _local_patch_size):
+        # loop over test slices
+        img2 = _img_local[:, :, tt].ravel()
+        ti1 = max(0, tt - int(_local_patch_size[2] / 2))
+        ti2 = min(_img_local.shape[2] - 1, tt + int(_local_patch_size[2] / 2))
+        _sim = np.zeros((ti2 - ti1))
+        for nn, zz in enumerate(range(ti1, ti2)):
+            img1 = _img_local[:, :, zz].ravel()
+            _sim[nn] = sim_func(img1, img2)
+
+        return _sim
