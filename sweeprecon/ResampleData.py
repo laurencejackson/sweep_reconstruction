@@ -6,10 +6,10 @@ Laurence Jackson, BME, KCL 2019
 
 import os
 # limit threading to reduce cpu overhead in parallel processes - must be done before importing num/scipy
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ['OPENBLAS_NUM_THREADS'] = '1'
+#os.environ["MKL_NUM_THREADS"] = "1"
+#os.environ["NUMEXPR_NUM_THREADS"] = "1"
+#os.environ["OMP_NUM_THREADS"] = "1"
+#os.environ['OPENBLAS_NUM_THREADS'] = '1'
 
 import sys
 import copy
@@ -335,10 +335,10 @@ class ResampleData(object):
     @staticmethod
     def _find_nearest_locs(locs, pxpy, xx, yy):
 
-        xi, yi = np.meshgrid(pxpy[:, 0], pxpy[:, 1])
+        xi, yi = np.meshgrid(pxpy[0], pxpy[1])
         nodes = np.concatenate((xi.ravel()[:, np.newaxis], yi.ravel()[:, np.newaxis]), axis=1)
         dist_2 = np.sum((nodes - [xx, yy]) ** 2, axis=1)
-        px = np.argwhere(pxpy[:, 0] == nodes[np.argmin(dist_2)][0])
-        py = np.argwhere(pxpy[:, 1] == nodes[np.argmin(dist_2)][1])
+        px = np.argwhere(pxpy[0] == nodes[np.argmin(dist_2)][0])
+        py = np.argwhere(pxpy[1] == nodes[np.argmin(dist_2)][1])
 
         return np.squeeze(locs[px, py, :]).astype(bool)

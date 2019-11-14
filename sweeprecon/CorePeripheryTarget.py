@@ -13,12 +13,6 @@ import random
 
 from multiprocessing import Pool, cpu_count
 from scipy.ndimage import gaussian_filter
-from bct import core_periphery_dir
-from scipy.stats import norm
-
-import matplotlib
-matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt
 
 
 class CorePeripheryTarget(object):
