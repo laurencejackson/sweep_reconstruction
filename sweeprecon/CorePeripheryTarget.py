@@ -108,7 +108,7 @@ class CorePeripheryTarget(object):
 
         return sim_mat
 
-    def _core_periphery(self, C, WindowSize=16):
+    def _core_periphery(self, C):
         """sliding window core/periphery graph"""
         print('->Assigning core/periphery ', flush=True)
         gamma_inc = 0.005
@@ -116,14 +116,14 @@ class CorePeripheryTarget(object):
         vecCore = np.zeros(C.shape[0])
         controlMethod = 'maxSeparation'  # make variable for future development options
         max_sep_fraction = 2.0
-        coreMask = np.zeros((WindowSize, C.shape[0]))
+        coreMask = np.zeros((self.window_size, C.shape[0]))
 
-        for n in range(0, C.shape[1]-WindowSize):
+        for n in range(0, C.shape[1]-self.window_size):
             gamma = 1
-            Caux = C[n:n + WindowSize, n: n + WindowSize]
+            Caux = C[n:n + self.window_size, n: n + self.window_size]
             if controlMethod == 'maxSeparation':
                 slice_thickness_n = self.slice_thickness / self._image.nii.header['pixdim'][3]
-                max_separation = min(round(max_sep_fraction * slice_thickness_n), WindowSize-3)
+                max_separation = min(round(max_sep_fraction * slice_thickness_n), self.window_size-3)
                 longest_sep = 0
                 coreMask[:, n] = self._core_periphery_dir(Caux, gamma)[0]
                 while longest_sep < max_separation and np.sum(coreMask[:, n]) > 3:
@@ -140,7 +140,7 @@ class CorePeripheryTarget(object):
 
             vecCore[np.argwhere(coreMask[:, n] > 0) + n] = vecCore[np.argwhere(coreMask[:, n] > 0) + n] + 1
 
-        locs = vecCore > (0.2 * WindowSize)
+        locs = vecCore > (0.2 * self.window_size)
 
         return locs
 

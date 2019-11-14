@@ -87,7 +87,7 @@ class ArgParser(object):
                             metavar='',
                             help="window size for graph recon [mm]",
                             required=False,
-                            default=6,
+                            default=5,
                             type=float
                             ):
         self._add_argument(dict(locals()))
