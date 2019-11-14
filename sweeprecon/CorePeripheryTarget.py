@@ -67,9 +67,11 @@ class CorePeripheryTarget(object):
         for nx, xx in enumerate(self.px):
             for ny, yy in enumerate(self.py):
                 print('Analysing patch (%d,%d): %d/%d' % (xx, yy, (nx*self.px.size) + ny + 1, self.px.size * self.py.size), end=' ', flush=True)
+                t1 = time.time()
                 self._extract_local_patch(xx, yy, focus=True)
                 self._adj[nx, ny, :, :] = self._local_sim()
                 self.locs[nx, ny, :] = self._core_periphery_parallel(np.squeeze(self._adj[nx, ny, :, :]), pool)
+                print((': time/patch %.2f' % (time.time()-t1)), flush=True)
 
         pool.close()
         pool.join()
@@ -117,7 +119,7 @@ class CorePeripheryTarget(object):
 
     def _core_periphery(self, C):
         """sliding window core/periphery graph"""
-        print('->Assigning core/periphery ', flush=True)
+        print('->Assigning core/periphery ', end=' ', flush=True)
         gamma_inc = 0.005
         gamma_max = 1.8
         vecCore = np.zeros(C.shape[0])
@@ -158,9 +160,7 @@ class CorePeripheryTarget(object):
         gamma_inc = 0.005
         gamma_max = 1.8
         vecCore = np.zeros(C.shape[0])
-        controlMethod = 'maxSeparation'  # make variable for future development options
         max_sep_fraction = 2.0
-        coreMask = np.zeros((self.window_size, C.shape[0]))
 
         slice_thickness_n = self.slice_thickness / self._image.nii.header['pixdim'][3]
         max_separation = min(round(max_sep_fraction * slice_thickness_n), self.window_size - 2)
