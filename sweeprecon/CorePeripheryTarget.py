@@ -68,7 +68,7 @@ class CorePeripheryTarget(object):
                 self.locs[nx, ny, :] = self._core_periphery(np.squeeze(self._adj[nx, ny, :, :]))
 
     def _extract_local_patch(self, xx, yy, focus=False):
-        print('->Extracting local patch', end=' ', flush=True)
+        """Extracts patch centred at xx, yy"""
         x1 = np.int_(xx - self._local_patch_size[0]/2)
         x2 = np.int_(xx + self._local_patch_size[0]/2)
         y1 = np.int_(yy - self._local_patch_size[1]/2)
@@ -89,6 +89,7 @@ class CorePeripheryTarget(object):
                 self._img_local[:, :, zz] = self._img_local[:, :, zz] * C
 
     def _local_sim(self):
+        """Creates adjacency matrix from local patch"""
         print('->Calculating local similarity', end=' ', flush=True)
         # loop over target slices
         sim_mat = np.zeros((self._img_local.shape[2], self._img_local.shape[2]))

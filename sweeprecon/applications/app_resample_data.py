@@ -5,7 +5,6 @@ Resamples sorted and classified data into 3D/4D respiration resolved volumes
 Laurence Jackson, BME, KCL, 2019
 """
 
-import sys
 import scipy.io as sio
 from sweeprecon.ResampleData import ResampleData
 from sweeprecon.io.ArgParser import ArgParser
@@ -60,31 +59,24 @@ def app_resample_data(pipeline=False):
     #    print('Missing requirements: please run full pipeline through __main__')
     #    sys.exit()
 
-    if args.resp_method == 'graph':
+    if args.resp_method == 'graph' or logger.log.args.resp_method == 'graph':
         # set up re-sampler
         if args.locs_matlab is not None:
             logger.log.graph_locs = sio.loadmat(args.locs_matlab)['locs']
             logger.log.px_py = sio.loadmat(args.locs_matlab)['pxpy']
+        resample_struct = (logger.log.locs, logger.log.px_py)
+    else:
+        resample_struct = logger.log.resp_states
 
-        resampler = ResampleData(image,
-                                 (logger.log.locs, logger.log.px_py),  # how to do it in future
-                                 image.slice_positions(),
-                                 write_paths,
-                                 args,
-                                 kernel_dims=args.kernel_dims,
-                                 n_threads=args.n_threads
-                                 )
-
-    elif args.resp_method =='ba':
-
-        resampler = ResampleData(image,
-                                 logger.log.resp_states,
-                                 logger.log.geo_slice_locations,
-                                 write_paths,
-                                 args,
-                                 kernel_dims=args.kernel_dims,
-                                 n_threads=args.n_threads
-                                 )
+    # create resampler
+    resampler = ResampleData(image,
+                             resample_struct,  # how to do it in future
+                             image.slice_positions(),
+                             write_paths,
+                             args,
+                             kernel_dims=args.kernel_dims,
+                             n_threads=args.n_threads
+                             )
 
     # run re-sampling
     resampler.run()
