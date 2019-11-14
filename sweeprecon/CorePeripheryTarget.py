@@ -69,13 +69,7 @@ class CorePeripheryTarget(object):
                 print('Analysing patch (%d,%d): %d/%d' % (xx, yy, (nx*self.px.size) + ny + 1, self.px.size * self.py.size), end=' ', flush=True)
                 self._extract_local_patch(xx, yy, focus=True)
                 self._adj[nx, ny, :, :] = self._local_sim()
-                t1 = time.time()
-                self.locs[nx, ny, :] = self._core_periphery(np.squeeze(self._adj[nx, ny, :, :]))
-                t2 = time.time()
-                t3 = time.time()
                 self.locs[nx, ny, :] = self._core_periphery_parallel(np.squeeze(self._adj[nx, ny, :, :]), pool)
-                t4 = time.time()
-                print('normal: %f, parallel: %f' % (t2-t1, t4-t3))
 
         pool.close()
         pool.join()
