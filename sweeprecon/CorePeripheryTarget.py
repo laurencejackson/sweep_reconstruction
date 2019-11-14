@@ -50,7 +50,7 @@ class CorePeripheryTarget(object):
 
         self._filtered_image.set_data(filtered_data)
 
-    def _generate_locs(self):
+    def _generate_locs(self, cores=0):
         """ Find local similarity measure"""
         x1 = max(self._local_patch_size[0]/2, (self._image.img.shape[0] / (self._nsx + 1)))
         x2 = min(self._image.img.shape[0] - self._local_patch_size[0]/2, (self._image.img.shape[0] - (self._image.img.shape[0] / (self._nsx+1))))
@@ -60,12 +60,25 @@ class CorePeripheryTarget(object):
         self.px = np.linspace(x1, x2, self._nsx).astype(int)
         self.py = np.linspace(y1, y2, self._nsy).astype(int)
 
+        if cores is 0:
+            cores = max(1, cpu_count() - 1)
+        pool = Pool(cores)
+
         for nx, xx in enumerate(self.px):
             for ny, yy in enumerate(self.py):
-                print(' Analysing patch (%d,%d): %d/%d' % (xx, yy, (nx*self.px.size) + ny + 1, self.px.size * self.py.size), end=' ', flush=True)
+                print('Analysing patch (%d,%d): %d/%d' % (xx, yy, (nx*self.px.size) + ny + 1, self.px.size * self.py.size), end=' ', flush=True)
                 self._extract_local_patch(xx, yy, focus=True)
                 self._adj[nx, ny, :, :] = self._local_sim()
+                t1 = time.time()
                 self.locs[nx, ny, :] = self._core_periphery(np.squeeze(self._adj[nx, ny, :, :]))
+                t2 = time.time()
+                t3 = time.time()
+                self.locs[nx, ny, :] = self._core_periphery_parallel(np.squeeze(self._adj[nx, ny, :, :]), pool)
+                t4 = time.time()
+                print('normal: %f, parallel: %f' % (t2-t1, t4-t3))
+
+        pool.close()
+        pool.join()
 
     def _extract_local_patch(self, xx, yy, focus=False):
         """Extracts patch centred at xx, yy"""
@@ -123,10 +136,10 @@ class CorePeripheryTarget(object):
             Caux = C[n:n + self.window_size, n: n + self.window_size]
             if controlMethod == 'maxSeparation':
                 slice_thickness_n = self.slice_thickness / self._image.nii.header['pixdim'][3]
-                max_separation = min(round(max_sep_fraction * slice_thickness_n), self.window_size-3)
+                max_separation = min(round(max_sep_fraction * slice_thickness_n), self.window_size-2)
                 longest_sep = 0
                 coreMask[:, n] = self._core_periphery_dir(Caux, gamma)[0]
-                while longest_sep < max_separation and np.sum(coreMask[:, n]) > 3:
+                while longest_sep < max_separation and np.sum(coreMask[:, n]) > 2:
                     coreMask[:, n] = self._core_periphery_dir(Caux, gamma)[0]
                     longest_sep = max(len(list(y)) for (c, y) in itertools.groupby(coreMask[:, n]) if c==0)
                     gamma = gamma + gamma_inc
@@ -144,7 +157,36 @@ class CorePeripheryTarget(object):
 
         return locs
 
-    def _core_periphery_dir(self, W, gamma=1, C0=None, seed=None):
+    def _core_periphery_parallel(self, C, pool):
+        """sliding window core/periphery graph"""
+        print('->Assigning core/periphery ', flush=True)
+
+        gamma_inc = 0.005
+        gamma_max = 1.8
+        vecCore = np.zeros(C.shape[0])
+        controlMethod = 'maxSeparation'  # make variable for future development options
+        max_sep_fraction = 2.0
+        coreMask = np.zeros((self.window_size, C.shape[0]))
+
+        slice_thickness_n = self.slice_thickness / self._image.nii.header['pixdim'][3]
+        max_separation = min(round(max_sep_fraction * slice_thickness_n), self.window_size - 2)
+
+        window_size = self.window_size
+        core_func = self._core_periphery_dir
+
+        sub_arrays = pool.starmap_async(self._analyse_caux,
+                                  [(core_func, C[n:n + window_size, n: n + window_size], max_separation, gamma_inc, gamma_max)
+                                  for n in range(0, C.shape[1]-window_size)]).get()
+
+        for n in range(0, C.shape[1]-self.window_size):
+            vecCore[np.argwhere(sub_arrays[n] > 0) + n] = vecCore[np.argwhere(sub_arrays[n] > 0) + n] + 1
+
+        locs = vecCore > (0.2 * self.window_size)
+
+        return locs
+
+    @staticmethod
+    def _core_periphery_dir(W, gamma=1, C0=None, seed=None):
         """
         Credit for _get_rng and _core_periphery_dir goes to bctpy and Roan LaPlante (https://github.com/aestrivex/bctpy)
 
@@ -172,7 +214,8 @@ class CorePeripheryTarget(object):
             If None (default), use the np.random's global random state to generate random numbers.
             Otherwise, use a new np.random.RandomState instance seeded with the given value.
         """
-        rng = self._get_rng(seed)
+        rng = np.random.mtrand._rand
+
         n = len(W)
         np.fill_diagonal(W, 0)
 
@@ -292,28 +335,22 @@ class CorePeripheryTarget(object):
         return np.stack(sub_arrays, axis=2)
 
     @staticmethod
-    def _get_rng(seed=None):
-        """
-        Credit for _get_rng and _core_periphery_dir goes to bctpy and Roan LaPlante (https://github.com/aestrivex/bctpy)
+    def _analyse_caux(core_func, Caux, max_separation, gamma_inc, gamma_max, controlMethod='maxSeparation'):
+        """nested definition"""
+        gamma = 1
+        if controlMethod == 'maxSeparation':
+            longest_sep = 0
+            core_v = core_func(Caux, gamma)[0]
+            while longest_sep < max_separation and np.sum(core_v) > 2:
+                core_v = core_func(Caux, gamma)[0]
+                longest_sep = max(len(list(y)) for (c, y) in itertools.groupby(core_v) if c == 0)
+                gamma = gamma + gamma_inc
 
-        By default, or if `seed` is np.random, return the global RandomState
-        instance used by np.random.
-        If `seed` is a RandomState instance, return it unchanged.
-        Otherwise, use the passed (hashable) argument to seed a new instance
-        of RandomState and return it.
-        Parameters
-        ----------
-        seed : hashable or np.random.RandomState or np.random, optional
-        Returns
-        -------
-        np.random.RandomState
-        """
-        if seed is None or seed == np.random:
-            return np.random.mtrand._rand
-        elif isinstance(seed, np.random.RandomState):
-            return seed
-        try:
-            rstate = np.random.RandomState(seed)
-        except ValueError:
-            rstate = np.random.RandomState(random.Random(seed).randint(0, 2 ** 32 - 1))
-        return rstate
+                if gamma > gamma_max:
+                    print(':Gamma max reached:', end=' ')
+                    break
+
+            gamma_opt = gamma - (2 * gamma_inc)
+            core_v = core_func(Caux, gamma_opt)[0]
+
+        return core_v
