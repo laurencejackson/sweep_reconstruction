@@ -16,6 +16,8 @@ from scipy.ndimage import gaussian_filter
 from bct import core_periphery_dir
 from scipy.stats import norm
 
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 
@@ -42,7 +44,7 @@ class CorePeripheryTarget(object):
     def run(self):
 
         self._pre_process_image()
-        self._generate_adjacency_matrix()
+        self._generate_locs()
 
     def _pre_process_image(self):
         """Correct respiraiton using core/periphery networks"""
@@ -54,7 +56,7 @@ class CorePeripheryTarget(object):
 
         self._filtered_image.set_data(filtered_data)
 
-    def _generate_adjacency_matrix(self):
+    def _generate_locs(self):
         """ Find local similarity measure"""
         x1 = max(self._local_patch_size[0]/2, (self._image.img.shape[0] / (self._nsx + 1)))
         x2 = min(self._image.img.shape[0] - self._local_patch_size[0]/2, (self._image.img.shape[0] - (self._image.img.shape[0] / (self._nsx+1))))
@@ -66,17 +68,17 @@ class CorePeripheryTarget(object):
 
         for nx, xx in enumerate(self.px):
             for ny, yy in enumerate(self.py):
-                print(' Analysing patch (%d,%d)' % (xx, yy), end=' ')
+                print(' Analysing patch (%d,%d): %d/%d' % (xx, yy, (nx*self.px.size) + ny + 1, self.px.size * self.py.size), end=' ', flush=True)
                 self._extract_local_patch(xx, yy, focus=True)
-                self._adj[nx, ny, :, :] = self._local_sim(xx, yy)
+                self._adj[nx, ny, :, :] = self._local_sim()
                 self.locs[nx, ny, :] = self._core_periphery(np.squeeze(self._adj[nx, ny, :, :]))
 
     def _extract_local_patch(self, xx, yy, focus=False):
-        print('->Extracting local patch', end=' ')
-        x1 = np.int_(xx - self._local_patch_size[0]/2)-1
-        x2 = np.int_(xx + self._local_patch_size[0]/2)-1
-        y1 = np.int_(yy - self._local_patch_size[1]/2)-1
-        y2 = np.int_(yy + self._local_patch_size[1]/2)-1
+        print('->Extracting local patch', end=' ', flush=True)
+        x1 = np.int_(xx - self._local_patch_size[0]/2)
+        x2 = np.int_(xx + self._local_patch_size[0]/2)
+        y1 = np.int_(yy - self._local_patch_size[1]/2)
+        y2 = np.int_(yy + self._local_patch_size[1]/2)
 
         # self._img_local.square_crop(local_rect)
         self._img_local = np.zeros((self._local_patch_size[0], self._local_patch_size[1], self._image.img.shape[2]))
@@ -92,55 +94,56 @@ class CorePeripheryTarget(object):
             for zz in range(0, self._image.img.shape[2]):
                 self._img_local[:, :, zz] = self._img_local[:, :, zz] * C
 
-    def _local_sim(self, xx, yy):
-        print('->Calculating local similarity', end=' ')
+    def _local_sim(self):
+        print('->Calculating local similarity', end=' ', flush=True)
         # loop over target slices
         sim_mat = np.zeros((self._img_local.shape[2], self._img_local.shape[2]))
 
         for tt in range(0, self._img_local.shape[2] - 1):
             # loop over test slices
-            _offset1 = 0
-            _offset2 = self._local_patch_size[2]
-            for nn, zz in enumerate(range(tt - int(self._local_patch_size[2] / 2), tt + int(self._local_patch_size[2] / 2))):
-                if zz < 0:
-                    self._sim[nn] = 0
-                    _offset1 += 1
-                elif zz > self._image.img.shape[2] - 1:
-                    self._sim[nn] = 0
-                    _offset2 += -1
-                else:
-                    self._sim[nn] = self._zncc(self._img_local[:, :, zz], self._img_local[:, :, tt])
+            img2 = self._img_local[:, :, tt].ravel()
+            ti1 = max(0, tt - int(self._local_patch_size[2] / 2))
+            ti2 = min(self._image.img.shape[2] - 1, tt + int(self._local_patch_size[2] / 2))
+            _sim = np.zeros((ti2 - ti1))
+            for nn, zz in enumerate(range(ti1, ti2)):
+                img1 = self._img_local[:, :, zz].ravel()
+                _sim[nn] = self._zncc(img1, img2)
 
-            sim_mat[tt, range(max(0, tt - int(self._local_patch_size[2] / 2)), min(tt + int(self._local_patch_size[2] / 2), self._image.img.shape[2]))] = self._sim[range(_offset1, _offset2),]  # .clip(min=0)  # set negative values to 0
+            sim_mat[tt, range(ti1, ti2)] = _sim
 
         return sim_mat
 
     def _core_periphery(self, C, WindowSize=16):
         """sliding window core/periphery graph"""
-        print('->Assigning core/periphery ')
+        print('->Assigning core/periphery ', flush=True)
         gamma_inc = 0.005
         gamma_max = 1.8
         vecCore = np.zeros(C.shape[0])
-        controlMethod = 'maxSeparation'
+        controlMethod = 'maxSeparation'  # make variable for future development options
+        max_sep_fraction = 2.0
         coreMask = np.zeros((WindowSize, C.shape[0]))
 
         for n in range(0, C.shape[1]-WindowSize):
             gamma = 1
             Caux = C[n:n + WindowSize, n: n + WindowSize]
             if controlMethod == 'maxSeparation':
-                max_separation = 0.5 * WindowSize
+                slice_thickness_n = self.slice_thickness / self._image.nii.header['pixdim'][3]
+                max_separation = min(round(max_sep_fraction * slice_thickness_n), WindowSize-3)
                 longest_sep = 0
-                while longest_sep < max_separation:
-                    coreMask[:, n] = core_periphery_dir(Caux, gamma)[0]
-                    longest_sep = max(len(list(y)) for (c,y) in itertools.groupby(coreMask[:, n]) if c==0)
+                coreMask[:, n] = self._core_periphery_dir(Caux, gamma)[0]
+                while longest_sep < max_separation and np.sum(coreMask[:, n]) > 3:
+                    coreMask[:, n] = self._core_periphery_dir(Caux, gamma)[0]
+                    longest_sep = max(len(list(y)) for (c, y) in itertools.groupby(coreMask[:, n]) if c==0)
                     gamma = gamma + gamma_inc
-                    if longest_sep > max_separation:
-                        coreMask[:, n] = self._core_periphery_dir(Caux, gamma - (2 * gamma_inc))[0]
-                        gamma = gamma - (2 * gamma_inc)
+
                     if gamma > gamma_max:
+                        print(':Gamma max reached:', end=' ')
                         break
 
-            vecCore[np.argwhere(coreMask[:, n] > 0) + n] = vecCore[np.argwhere(coreMask[:, n] > 0)+n] + 1
+                gamma_opt = gamma - (2 * gamma_inc)
+                coreMask[:, n] = self._core_periphery_dir(Caux, gamma_opt)[0]
+
+            vecCore[np.argwhere(coreMask[:, n] > 0) + n] = vecCore[np.argwhere(coreMask[:, n] > 0) + n] + 1
 
         locs = vecCore > (0.2 * WindowSize)
 
@@ -246,7 +249,7 @@ class CorePeripheryTarget(object):
         """
         Return zero normalised cross correlation
         """
-        return (1/img1.size) * np.sum( (1/(np.std(img1.ravel())*np.std(img2.ravel()))) * (img1.ravel()-np.mean(img1.ravel())) * (img2.ravel()-np.mean(img2.ravel())))
+        return (1/img1.size) * np.sum((1/(np.std(img1)*np.std(img2))) * (img1-np.mean(img1)) * (img2-np.mean(img2)))
 
     @ staticmethod
     def _filter_gaussian(img, sigma=0.75):

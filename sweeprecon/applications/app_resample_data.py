@@ -67,8 +67,7 @@ def app_resample_data(pipeline=False):
             logger.log.px_py = sio.loadmat(args.locs_matlab)['pxpy']
 
         resampler = ResampleData(image,
-                                 (logger.log.graph_locs, logger.log.px_py), # how to do it in future
-                                 #logger.log.graph_locs,
+                                 (logger.log.locs, logger.log.px_py),  # how to do it in future
                                  image.slice_positions(),
                                  write_paths,
                                  args,

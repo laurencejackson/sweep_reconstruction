@@ -96,7 +96,7 @@ def app_estimate_respiration(pipeline=False):
     elif args.resp_method == 'graph':
         grp = CorePeripheryTarget(image, np.array([86, 86, 128]), args, write_paths)
         grp.run()
-        logger.set_key('graph_locs', grp.locs)
+        logger.set_key('locs', grp.locs)
         logger.set_key('px_py', (grp.px, grp.py))
 
     else:
