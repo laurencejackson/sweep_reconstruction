@@ -53,6 +53,7 @@ def main():
     input_vars.add_patch_size(required=False)
     input_vars.add_patch_stride(required=False)
     input_vars.add_recon_iterations(required=False)
+    input_vars.add_flag_remote_recon(required=False)
 
     # parse
     args = input_vars.parse_args()
