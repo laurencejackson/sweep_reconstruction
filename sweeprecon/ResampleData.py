@@ -49,6 +49,7 @@ class ResampleData(object):
         self._image_4d = copy.deepcopy(image)
         self._image_resp_3d = copy.deepcopy(image)
         self._states = states
+        self.target_out = image.imagefilepath
         if isinstance(self._states, tuple):
             print('Switching to graph method')
             self._graph_resample = True
@@ -160,6 +161,7 @@ class ResampleData(object):
         # write to file
         self._image_4d.set_data(self._img_4d)
         self._write_resampled_data(self._image_4d, self._write_paths.path_interpolated_4d_linear())
+        self.target_out = self._write_paths.path_interpolated_4d_linear()
 
         # if frangi filter 4D linear volume
         if self._args.frangi:
@@ -241,6 +243,7 @@ class ResampleData(object):
         # write full 4D interp volume
         self._image_4d.set_data(self._img_4d)
         self._write_resampled_data(self._image_4d, self._write_paths.path_interpolated_4d())
+        self.target_out = self._write_paths.path_interpolated_4d()
 
         # if frangi filter 4D rbf volume
         if self._args.frangi:

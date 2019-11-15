@@ -81,13 +81,8 @@ def app_resample_data(pipeline=False):
     # run re-sampling
     resampler.run()
 
-    # define target volume for reconstruction
-    if args.interpolator is not 'fast_linear':
-        print('setting fast_linear interpolation to target')
-        logger.set_key('target', write_paths.path_interpolated_4d())
-    else:
-        print('setting ' + args.interpolator + ' interpolation to target')
-        logger.set_key('target', write_paths.path_interpolated_4d_linear())
+    # Define target for next pipeline reg step
+    logger.set_key('target', resampler.target_out)
 
     # save output
     logger.set_key('flag_resampled', True)
