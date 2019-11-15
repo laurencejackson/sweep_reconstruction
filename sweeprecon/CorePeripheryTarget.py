@@ -3,13 +3,11 @@ Class containing data and functions for estimating respiration siganl from 3D da
 
 Laurence Jackson, BME, KCL 2019
 """
-import os
-import sys
+
 import time
 import numpy as np
 import copy
 import itertools
-import random
 
 from multiprocessing import Pool, cpu_count
 from scipy.ndimage import gaussian_filter
@@ -20,8 +18,7 @@ class CorePeripheryTarget(object):
     def __init__(self, img, local_patch_size, args, write_paths):
         """Initialise"""
         self._image = img
-        self._filtered_image = copy.deepcopy(img)
-        self._img_local = None # copy.deepcopy(img)
+        self._img_local = np.zeros(local_patch_size)
         self._local_patch_size = local_patch_size
         self._args = args
         self._write_paths = write_paths
@@ -36,7 +33,7 @@ class CorePeripheryTarget(object):
         self.window_size = min(0.5 * self._local_patch_size[2] - 1, (self._args.window_size / self._image.nii.header['pixdim'][3])).astype(int)
 
     def run(self):
-
+        """Run core-periphery method for building registration target"""
         self._pre_process_image()
         self._generate_locs()
 
@@ -48,7 +45,7 @@ class CorePeripheryTarget(object):
                                                       self._image.img,
                                                       cores=self._args.n_threads)
 
-        self._filtered_image.set_data(filtered_data)
+        self._image.set_data(filtered_data)
 
     def _generate_locs(self, cores=0):
         """ Find local similarity measure"""

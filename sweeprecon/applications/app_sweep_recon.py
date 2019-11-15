@@ -50,6 +50,9 @@ def main():
     input_vars.add_flag_no_auto_crop(required=False)
     input_vars.add_resp_method(required=False)
     input_vars.add_read_locs_matlab(required=False)
+    input_vars.add_patch_size(required=False)
+    input_vars.add_patch_stride(required=False)
+    input_vars.add_recon_iterations(required=False)
 
     # parse
     args = input_vars.parse_args()
@@ -73,7 +76,7 @@ def main():
     app_resample_data(pipeline=True)
 
     # ______________________ Reconstruct image data ______________________
-    # app_reconstruct_data(pipeline=True)
+    app_reconstruct_data(pipeline=True)
 
     return
 
