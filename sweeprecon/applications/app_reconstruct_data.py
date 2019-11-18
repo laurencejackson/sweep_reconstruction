@@ -5,8 +5,6 @@ Reconstructs data using patch based SVR
 Laurence Jackson, BME, KCL, 2019
 """
 
-import sys
-
 from sweeprecon.Reconstruction import Reconstruction
 from sweeprecon.io.ArgParser import ArgParser
 from sweeprecon.io.ImageData import ImageData

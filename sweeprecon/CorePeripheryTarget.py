@@ -6,7 +6,6 @@ Laurence Jackson, BME, KCL 2019
 
 import time
 import numpy as np
-import copy
 import itertools
 
 from multiprocessing import Pool, cpu_count

@@ -5,11 +5,6 @@ Laurence Jackson, BME, KCL 2019
 """
 
 import os
-# limit threading to reduce cpu overhead in parallel processes - must be done before importing num/scipy
-#os.environ["MKL_NUM_THREADS"] = "1"
-#os.environ["NUMEXPR_NUM_THREADS"] = "1"
-#os.environ["OMP_NUM_THREADS"] = "1"
-#os.environ['OPENBLAS_NUM_THREADS'] = '1'
 
 import sys
 import copy
@@ -19,7 +14,6 @@ import numpy as np
 
 from scipy import interpolate
 from skimage.filters import frangi
-from skimage.transform import resize
 from joblib import delayed, Parallel
 
 

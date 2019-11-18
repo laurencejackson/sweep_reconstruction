@@ -5,13 +5,6 @@ Runs the full reconstruction pipeline
 Laurence Jackson, BME, KCL, 2019
 """
 
-import os
-# limit threading to reduce cpu overhead in parallel processes - must be done before importing num/scipy
-#os.environ["MKL_NUM_THREADS"] = "1"
-#os.environ["NUMEXPR_NUM_THREADS"] = "1"
-#os.environ["OMP_NUM_THREADS"] = "1"
-#os.environ['OPENBLAS_NUM_THREADS'] = '1'
-
 from sweeprecon.io.ArgParser import ArgParser
 from sweeprecon.applications.app_sort_image_data import app_sort_image_data
 from sweeprecon.applications.app_estimate_respiration import app_estimate_respiration
@@ -66,9 +59,6 @@ def main():
 
     # ________________________ Sorting image data ________________________
     app_sort_image_data(pipeline=True)
-
-    # ________________________ Pre-processing data _______________________
-    # TODO outlier exclusion
 
     # _______________________ Estimating respiration _____________________
     app_estimate_respiration(pipeline=True)
