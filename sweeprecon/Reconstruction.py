@@ -194,7 +194,7 @@ class Reconstruction(object):
             "svr_only": True,
             "no_intensity_matching": True,
             "no_sr": False,
-            "no_robust_statistics": True,
+            "no_robust_statistics": False,
             "reg_log": False,
         }
 
