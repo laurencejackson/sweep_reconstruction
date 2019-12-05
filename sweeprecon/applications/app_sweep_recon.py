@@ -49,6 +49,7 @@ def main():
     input_vars.add_flag_remote_recon(required=False)
     input_vars.add_max_separation_fraction(required=False)
     input_vars.add_min_slices(required=False)
+    input_vars.add_rs_local_def(required=False)
 
     # parse
     args = input_vars.parse_args()
