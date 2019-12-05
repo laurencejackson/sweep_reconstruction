@@ -171,6 +171,26 @@ class ArgParser(object):
                       ):
         self._add_argument(dict(locals()))
 
+    def add_max_separation_fraction(self,
+                      option_string=("-msf", "--max_separation_fraction"),
+                      metavar='',
+                      help="Fraction of slice thickness determining max separation of slices in sliding window (graph rs only)",
+                      required=False,
+                      type=float,
+                      default=2.0
+                      ):
+        self._add_argument(dict(locals()))
+
+    def add_min_slices(self,
+                      option_string=("-mins", "--min_slices"),
+                      metavar='',
+                      help="Minimum number of slices in sliding window (graph rs only)",
+                      required=False,
+                      type=int,
+                      default=2
+                      ):
+        self._add_argument(dict(locals()))
+
     def add_recon_iterations(self,
                       option_string=("-it", "--iterations"),
                       metavar='',

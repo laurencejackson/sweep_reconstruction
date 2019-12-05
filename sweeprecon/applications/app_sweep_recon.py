@@ -47,6 +47,8 @@ def main():
     input_vars.add_patch_stride(required=False)
     input_vars.add_recon_iterations(required=False)
     input_vars.add_flag_remote_recon(required=False)
+    input_vars.add_max_separation_fraction(required=False)
+    input_vars.add_min_slices(required=False)
 
     # parse
     args = input_vars.parse_args()

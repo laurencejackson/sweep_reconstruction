@@ -26,6 +26,8 @@ class CorePeripheryTarget(object):
         self._adj = np.zeros((self._nsx, self._nsy, self._image.img.shape[2], self._image.img.shape[2]))
         self._sim = np.zeros(local_patch_size[2])
         self.locs = np.zeros((self._nsx, self._nsy, self._image.img.shape[2]))
+        self._max_sep_fraction = args.max_separation_fraction
+        self._min_slices = args.min_slices
 
         # vars
         self.slice_thickness = self._args.thickness
@@ -137,7 +139,6 @@ class CorePeripheryTarget(object):
         gamma_max = 1.8
         vecCore = np.zeros(C.shape[0])
         controlMethod = 'maxSeparation'  # make variable for future development options
-        max_sep_fraction = 2.0
         coreMask = np.zeros((self.window_size, C.shape[0]))
 
         for n in range(0, C.shape[1]-self.window_size):
@@ -145,10 +146,10 @@ class CorePeripheryTarget(object):
             Caux = C[n:n + self.window_size, n: n + self.window_size]
             if controlMethod == 'maxSeparation':
                 slice_thickness_n = self.slice_thickness / self._image.nii.header['pixdim'][3]
-                max_separation = min(round(max_sep_fraction * slice_thickness_n), self.window_size-2)
+                max_separation = min(round(self._max_sep_fraction * slice_thickness_n), self.window_size-2)
                 longest_sep = 0
                 coreMask[:, n] = self._core_periphery_dir(Caux, gamma)[0]
-                while longest_sep < max_separation and np.sum(coreMask[:, n]) > 2:
+                while longest_sep < max_separation and np.sum(coreMask[:, n]) > self._min_slices:
                     coreMask[:, n] = self._core_periphery_dir(Caux, gamma)[0]
                     longest_sep = max(len(list(y)) for (c, y) in itertools.groupby(coreMask[:, n]) if c==0)
                     gamma = gamma + gamma_inc
@@ -173,16 +174,14 @@ class CorePeripheryTarget(object):
         gamma_inc = 0.005
         gamma_max = 1.8
         vecCore = np.zeros(C.shape[0])
-        max_sep_fraction = 2.0
 
         slice_thickness_n = self.slice_thickness / self._image.nii.header['pixdim'][3]
-        max_separation = min(round(max_sep_fraction * slice_thickness_n), self.window_size - 2)
+        max_separation = min(round(self._max_sep_fraction * slice_thickness_n), self.window_size - 2)
 
         window_size = self.window_size
         core_func = self._core_periphery_dir
-
         sub_arrays = pool.starmap_async(self._analyse_caux,
-                                  [(core_func, C[n:n + window_size, n: n + window_size], max_separation, gamma_inc, gamma_max)
+                                  [(core_func, C[n:n + window_size, n: n + window_size], max_separation, self._min_slices, gamma_inc, gamma_max)
                                   for n in range(0, C.shape[1]-window_size)]).get()
 
         for n in range(0, C.shape[1]-self.window_size):
@@ -342,13 +341,13 @@ class CorePeripheryTarget(object):
         return np.stack(sub_arrays, axis=2)
 
     @staticmethod
-    def _analyse_caux(core_func, Caux, max_separation, gamma_inc, gamma_max, controlMethod='maxSeparation'):
+    def _analyse_caux(core_func, Caux, max_separation, min_slices, gamma_inc, gamma_max, controlMethod='maxSeparation'):
         """nested definition"""
         gamma = 1
         if controlMethod == 'maxSeparation':
             longest_sep = 0
             core_v = core_func(Caux, gamma)[0]
-            while longest_sep < max_separation and np.sum(core_v) > 2:
+            while longest_sep < max_separation and np.sum(core_v) > min_slices:
                 core_v = core_func(Caux, gamma)[0]
                 longest_sep = max(len(list(y)) for (c, y) in itertools.groupby(core_v) if c == 0)
                 gamma = gamma + gamma_inc
