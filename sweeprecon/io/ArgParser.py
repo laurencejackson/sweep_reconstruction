@@ -240,7 +240,7 @@ class ArgParser(object):
                        nargs=3,
                        required=False,
                        type=int,
-                       default=[128, 128, 128]
+                       default=[128, 128, 86]
                        ):
         self._add_argument(dict(locals()))
 

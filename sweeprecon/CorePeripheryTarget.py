@@ -164,8 +164,9 @@ class CorePeripheryTarget(object):
                 coreMask[:, n] = self._core_periphery_dir(Caux, gamma_opt)[0]
 
             vecCore[np.argwhere(coreMask[:, n] > 0) + n] = vecCore[np.argwhere(coreMask[:, n] > 0) + n] + 1
-
-        locs = vecCore > (0.2 * self.window_size)
+        selection_density = np.convolve(np.ones(self.window_size), np.ones(vecCore.shape), mode='same')
+        locs = vecCore >= (self._selection_fraction * selection_density)
+        #locs = vecCore > (self._selection_fraction * self.window_size)
 
         return locs
 
@@ -189,7 +190,9 @@ class CorePeripheryTarget(object):
         for n in range(0, C.shape[1]-self.window_size):
             vecCore[np.argwhere(sub_arrays[n] > 0) + n] = vecCore[np.argwhere(sub_arrays[n] > 0) + n] + 1
 
-        locs = vecCore > (self._selection_fraction * self.window_size)
+        selection_density = np.convolve(np.ones(self.window_size), np.ones(vecCore.shape), mode='same')
+        locs = vecCore >= (self._selection_fraction * selection_density)
+        #locs = vecCore > (self._selection_fraction * self.window_size)
 
         return locs
 
