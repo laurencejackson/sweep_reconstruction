@@ -226,13 +226,14 @@ class ArgParser(object):
     def add_rs_local_def(self,
                        option_string=("-ld", "--local_def"),
                        metavar='',
-                       help="definition of local area for graph target gen [dx dy dz]",
+                       help="Definition of local area for graph target gen [dx dy dz]",
                        nargs=3,
                        required=False,
                        type=int,
                        default=[98, 98, 128]
                        ):
         self._add_argument(dict(locals()))
+
     def add_flag_redo(self,
                       option_string=("-r", "--redo"),
                       action='store_true',

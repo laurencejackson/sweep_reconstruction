@@ -97,7 +97,7 @@ def app_estimate_respiration(pipeline=False):
             np.savetxt(write_paths.path_exclude_file(ww), slice_idx, fmt='%d', newline=' ')
 
     elif args.resp_method == 'graph':
-        grp = CorePeripheryTarget(image, np.array([86, 86, 128]), args, write_paths)
+        grp = CorePeripheryTarget(image, np.array(args.local_def), args, write_paths)
         grp.run()
         logger.set_key('locs', grp.locs)
         logger.set_key('px_py', (grp.px, grp.py))

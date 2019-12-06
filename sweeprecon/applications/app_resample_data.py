@@ -55,10 +55,6 @@ def app_resample_data(pipeline=False):
         write_paths = WritePaths(args)
         image = ImageData(write_paths.path_sorted())
 
-    #if not logger.log.flag_estimated_respiration or not logger.log.flag_sorted:
-    #    print('Missing requirements: please run full pipeline through __main__')
-    #    sys.exit()
-
     if args.resp_method == 'graph' or logger.log.args.resp_method == 'graph':
         # set up re-sampler
         if args.locs_matlab is not None:
@@ -70,7 +66,7 @@ def app_resample_data(pipeline=False):
 
     # create resampler
     resampler = ResampleData(image,
-                             resample_struct,  # how to do it in future
+                             resample_struct,
                              image.slice_positions(),
                              write_paths,
                              args,

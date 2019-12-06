@@ -68,4 +68,3 @@ class LogData(object):
         # open file and load data
         with open(path, 'rb') as pickle_file:
             self.log = pickle.load(pickle_file)
-
