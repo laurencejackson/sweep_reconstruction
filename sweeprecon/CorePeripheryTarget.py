@@ -28,6 +28,7 @@ class CorePeripheryTarget(object):
         self.locs = np.zeros((self._nsx, self._nsy, self._image.img.shape[2]))
         self._max_sep_fraction = args.max_separation_fraction
         self._min_slices = args.min_slices
+        self._selection_fraction = args.selection_fraction
 
         # vars
         self.slice_thickness = self._args.thickness
@@ -187,7 +188,7 @@ class CorePeripheryTarget(object):
         for n in range(0, C.shape[1]-self.window_size):
             vecCore[np.argwhere(sub_arrays[n] > 0) + n] = vecCore[np.argwhere(sub_arrays[n] > 0) + n] + 1
 
-        locs = vecCore > (0.2 * self.window_size)
+        locs = vecCore > (self._selection_fraction * self.window_size)
 
         return locs
 

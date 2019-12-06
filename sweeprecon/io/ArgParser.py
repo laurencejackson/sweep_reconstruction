@@ -181,6 +181,16 @@ class ArgParser(object):
                       ):
         self._add_argument(dict(locals()))
 
+    def add_selection_fraction(self,
+                      option_string=("-sf", "--selection_fraction"),
+                      metavar='',
+                      help="Fraction of window size that determines number of time slice must appear in core before being selected",
+                      required=False,
+                      type=float,
+                      default=0.2
+                      ):
+        self._add_argument(dict(locals()))
+
     def add_min_slices(self,
                       option_string=("-mins", "--min_slices"),
                       metavar='',

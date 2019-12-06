@@ -50,6 +50,7 @@ def app_estimate_respiration(pipeline=False):
         input_vars.add_max_separation_fraction(required=False)
         input_vars.add_min_slices(required=False)
         input_vars.add_rs_local_def(required=False)
+        input_vars.add_selection_fraction(required=False)
 
         # parse
         args = input_vars.parse_args()
