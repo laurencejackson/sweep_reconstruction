@@ -87,7 +87,7 @@ class ArgParser(object):
                             metavar='',
                             help="window size for graph recon [mm]",
                             required=False,
-                            default=5,
+                            default=6,
                             type=float
                             ):
         self._add_argument(dict(locals()))
@@ -177,7 +177,7 @@ class ArgParser(object):
                       help="Fraction of slice thickness determining max separation of slices in sliding window (graph rs only)",
                       required=False,
                       type=float,
-                      default=2.0
+                      default=2.5
                       ):
         self._add_argument(dict(locals()))
 
@@ -187,7 +187,7 @@ class ArgParser(object):
                       help="Fraction of window size that determines number of time slice must appear in core before being selected",
                       required=False,
                       type=float,
-                      default=0.2
+                      default=0.3
                       ):
         self._add_argument(dict(locals()))
 
@@ -240,7 +240,7 @@ class ArgParser(object):
                        nargs=3,
                        required=False,
                        type=int,
-                       default=[98, 98, 128]
+                       default=[128, 128, 128]
                        ):
         self._add_argument(dict(locals()))
 

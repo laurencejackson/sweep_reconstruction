@@ -40,7 +40,7 @@ class CorePeripheryTarget(object):
         self._generate_locs()
 
     def _pre_process_image(self):
-        """Correct respiraiton using core/periphery networks"""
+        """Correct respiration using core/periphery networks"""
 
         print('Filtering image....')
         filtered_data = self._process_slices_parallel(self._filter_gaussian,
@@ -86,7 +86,7 @@ class CorePeripheryTarget(object):
         self._img_local = np.zeros((self._local_patch_size[0], self._local_patch_size[1], self._image.img.shape[2]))
         self._img_local[:, :, :] = self._image.img[x1:x2, y1:y2, 0:self._image.img.shape[2]]
 
-        # focus option multiplies image magnitude by gaussian window reduces effect of things entering/exiting local def
+        # focus multiplies image magnitude by 2D gaussian attempts to reduce effect of things entering/exiting local def
         if focus:
             sig = self._local_patch_size[0] / 2
             xxlin = np.arange(0, self._local_patch_size[0])
@@ -183,8 +183,8 @@ class CorePeripheryTarget(object):
         window_size = self.window_size
         core_func = self._core_periphery_dir
         sub_arrays = pool.starmap_async(self._analyse_caux,
-                                  [(core_func, C[n:n + window_size, n: n + window_size], max_separation, self._min_slices, gamma_inc, gamma_max)
-                                  for n in range(0, C.shape[1]-window_size)]).get()
+                                        [(core_func, C[n:n + window_size, n: n + window_size], max_separation, self._min_slices, gamma_inc, gamma_max)
+                                         for n in range(0, C.shape[1]-window_size)]).get()
 
         for n in range(0, C.shape[1]-self.window_size):
             vecCore[np.argwhere(sub_arrays[n] > 0) + n] = vecCore[np.argwhere(sub_arrays[n] > 0) + n] + 1
