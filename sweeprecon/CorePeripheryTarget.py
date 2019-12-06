@@ -21,8 +21,8 @@ class CorePeripheryTarget(object):
         self._local_patch_size = local_patch_size
         self._args = args
         self._write_paths = write_paths
-        self._nsx = 8
-        self._nsy = 8
+        self._nsx = int(1.5 * (img.img.shape[0] / local_patch_size[0]))
+        self._nsy = int(1.5 * (img.img.shape[1] / local_patch_size[1]))
         self._adj = np.zeros((self._nsx, self._nsy, self._image.img.shape[2], self._image.img.shape[2]))
         self._sim = np.zeros(local_patch_size[2])
         self.locs = np.zeros((self._nsx, self._nsy, self._image.img.shape[2]))
@@ -86,6 +86,7 @@ class CorePeripheryTarget(object):
         self._img_local = np.zeros((self._local_patch_size[0], self._local_patch_size[1], self._image.img.shape[2]))
         self._img_local[:, :, :] = self._image.img[x1:x2, y1:y2, 0:self._image.img.shape[2]]
 
+        # focus option multiplies image magnitude by gaussian window reduces effect of things entering/exiting local def
         if focus:
             sig = self._local_patch_size[0] / 2
             xxlin = np.arange(0, self._local_patch_size[0])
@@ -242,8 +243,6 @@ class CorePeripheryTarget(object):
         ncix, = np.where(np.logical_not(C))
         q = np.sum(B[np.ix_(cix, cix)]) - np.sum(B[np.ix_(ncix, ncix)])
 
-        # sqish
-
         flag = True
         it = 0
         while flag:
@@ -268,10 +267,8 @@ class CorePeripheryTarget(object):
 
                 max_Qt = np.max(Qt[ixes])
                 u, = np.where(np.abs(Qt[ixes] - max_Qt) < 1e-10)
-                # tunourn
                 u = u[rng.randint(len(u))]
                 Ct[ixes[u]] = np.logical_not(Ct[ixes[u]])
-                # casga
 
                 ixes = np.delete(ixes, u)
 
